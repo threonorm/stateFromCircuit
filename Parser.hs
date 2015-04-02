@@ -78,20 +78,19 @@ expr    = buildExpressionParser table term
 
 term    =  do { punctuation2 '(' ; x <- expr ; punctuation2 ')' ; return x } 
 	<|> (Earg <$> ident2)
-table   = [	 
-		[prefix "!" (Enot), prefix "~" (Enot) ]
+
+table   = [[prefix "!" (Enot), prefix "~" (Enot), postfix "'" (Enot)]
 	,[Infix (try $ do{ string $ " ";
 			 try . token2. string $ ""; 
 			lookAhead expr;
 			return (Ebinop And) }) AssocLeft]
 	,[binary "&" (Ebinop And) AssocLeft]
-	  , [binary "+" (Ebinop Or) AssocLeft ]
-
-          ]
+	  , [binary "+" (Ebinop Or) AssocLeft ]]
         
 binary  name fun assoc = Infix (try $ do{  try . token1 . token2 . string $ name; return fun }) assoc
 prefix  name fun       = Prefix (try $do{ try . token2 . string $ name; return fun })
 
+postfix  name fun       = Postfix (try $do{ try . token2 . string $ name; return fun })
 
 
 
@@ -99,6 +98,6 @@ prefix  name fun       = Prefix (try $do{ try . token2 . string $ name; return f
 main :: IO()
 main =do
 	putStrLn "start" 
-	case parse expr "" "!kl +fd & a lk" of
+	case parse expr "" "kl' +fd & a lk" of
 		Left a -> putStrLn "fail"
 		Right b -> putStrLn . show $ b
