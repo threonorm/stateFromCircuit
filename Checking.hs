@@ -1,6 +1,6 @@
 {-# LANGUAGE TupleSections, TypeOperators, EmptyDataDecls, KindSignatures #-}
 
-module Parser where
+--module Parser where
 
 import Control.Monad
 import Control.Exception (assert)
