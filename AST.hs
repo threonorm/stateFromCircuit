@@ -24,9 +24,16 @@ data Exp = Earg Ident -- a: Argument
 -- equations: x = exp 
 type Equation = (Ident, Exp)
 
-data Circuit = Pr { c_inputs  :: [Ident]        -- inputs 
+data Circuit = C { c_inputs  :: [Ident]        -- inputs 
                   , c_outputs :: [Ident]        -- outputs 
                   , c_eqs     :: [Equation]     -- equations 
+                  }
+             deriving (Show)
+
+data FullCircuit = Fc { fc_inputs  :: [Ident]        -- inputs 
+                  , fc_outputs :: [Ident]        -- outputs 
+                  , fc_intermediate :: [Ident]   -- intermediate var 
+                  , fc_eqs     :: [Equation]     -- equations 
                   }
              deriving (Show)
 

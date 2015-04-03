@@ -1,4 +1,4 @@
-{-# LANGUAGE TupleSections, TypeOperators, EmptyDataDecls, KindSignatures #-}
+{-# LANGUAGE TupleSections#-}
 
 module Checking where
 
@@ -44,6 +44,8 @@ checkSanityFullCircuit fc =
 	sort needToDefine == (sort . map fst) eqs 
 	where 	eqs = fc_eqs fc 	
 		needToDefine = fc_outputs fc ++  fc_intermediate fc   
+
+
 
 
 

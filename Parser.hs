@@ -1,4 +1,4 @@
-{-# LANGUAGE TupleSections, TypeOperators, EmptyDataDecls, KindSignatures #-}
+{-# LANGUAGE TupleSections#-}
 
 module Parser where
 
@@ -26,7 +26,7 @@ import AST
 netlistParser :: Parser Circuit 
 netlistParser = spaces *> netlist <* spaces <* eof
 
-netlist = Pr <$> inputs <*> outputs <*> equations
+netlist = C <$> inputs <*> outputs <*> equations
 
 -- I. Definitions
 
@@ -108,18 +108,5 @@ punctuation = token1 . char
 punctuation2 = token2 . char
 
 bigList header eltParser = keyword header *> many eltParser  
-
--- Main 
--- Warning : This part of the code will disappear later
-   
-main :: IO()
-main =do
-	putStrLn "start" 
-	myLine <- getLine
-	result <-parseFromFile netlistParser myLine
-	case result  of
-		Left a -> putStrLn "fail"
-		Right b -> putStrLn . show $ b
-
 
 
