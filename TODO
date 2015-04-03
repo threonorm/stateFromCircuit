@@ -1,0 +1,3 @@
+Right now a(c + d) is incorrect, you need to put an extraspace. 
+1 -> Ask Jordi what do we want.
+2 -> Add support for other operators
