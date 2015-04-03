@@ -37,7 +37,15 @@ addIntermediateVariables circuit =
 -- We need to check that every output is defined
 -- That nobody is defined two times
 -- That everyone that is used is defined or is an input 
-checkSanityFullCircuit = undefined
+
+checkSanityFullCircuit :: FullCircuit -> Bool
+checkSanityFullCircuit fc =
+	nub (map fst eqs) == map fst eqs &&
+	sort needToDefine == (sort . map fst) eqs 
+	where 	eqs = fc_eqs fc 	
+		needToDefine = fc_outputs fc ++  fc_intermediate fc   
+
+
 
 main :: IO()
 main =do
@@ -46,7 +54,9 @@ main =do
 	result <-parseFromFile netlistParser myLine
 	case result  of
 		Left a -> putStrLn "fail"
-		Right b -> putStrLn . show . addIntermediateVariables $ b
+		Right b -> do
+				putStrLn . show . addIntermediateVariables $ b
+				putStrLn . show . checkSanityFullCircuit . addIntermediateVariables $ b
 
 
   
