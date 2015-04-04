@@ -30,6 +30,11 @@ data Circuit = C { c_inputs  :: [Ident]        -- inputs
                   }
              deriving (Show)
 
+-- TODO : Perhaps that I need to sort the eqs sortedInput
+-- sortedOutputs and ten sortedIntemediates
+-- I can do this when I build the FullCircuit
+-- TODO: Think about composition
+-- So fc_eqs contains eqs
 data FullCircuit = Fc { fc_inputs  :: [Ident]        -- inputs 
                   , fc_outputs :: [Ident]        -- outputs 
                   , fc_intermediate :: [Ident]   -- intermediate var 

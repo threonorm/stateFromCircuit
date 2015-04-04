@@ -23,7 +23,7 @@ addIntermediateVariables circuit =
 	Fc (c_inputs circuit )
 		(c_outputs circuit) 
 		(interm)
-		(c_eqs circuit)  
+		(c_eqs circuit) --USEFUL : put the output at the end  
 	where 	
 		interm = ((nub . concat . map (extractVariables . snd) $ c_eqs circuit)
 			\\ (c_outputs circuit))
@@ -37,7 +37,8 @@ addIntermediateVariables circuit =
 -- We need to check that every output is defined
 -- That nobody is defined two times
 -- That everyone that is used is defined or is an input 
-
+-- TODO for now I don't check that there are no the same input/output
+-- multiple times... TODO?
 checkSanityFullCircuit :: FullCircuit -> Bool
 checkSanityFullCircuit fc =
 	nub (map fst eqs) == map fst eqs &&

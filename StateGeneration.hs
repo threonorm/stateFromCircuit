@@ -21,13 +21,18 @@ import Checking
 
 type Vertex = Vector Bool --Of size fixed 
 
+-- inputs | outputs mixed with intermediates so n_v= n_int + n_inp + n_outpu
 data StateGraph =
 	SG { n_v :: Integer,
+		n_inputs :: Integer,
+		n_outputs :: Integer,
 		edges :: Map.Map Vertex [([Integer],[Integer])]			
 	}		
 	deriving (Show)
 
--- Generate all the states with list and then convert one time to Vectors
+-- Generate the 2^n states with list and then convert to Vectors to
+-- gain time
+
 generateListVertexList :: Integer -> [[Bool]]
 generateListVertexList 0 = [ [True], [False] ]
 generateListVertexList n = let prev = generateListVertexList (n-1) in
@@ -36,10 +41,34 @@ generateListVertexList n = let prev = generateListVertexList (n-1) in
 generateListVertexVector :: Integer -> [ Vector Bool ]
 generateListVertexVector n = List.map fromList $ generateListVertexList n
 
-generateEmptyGraph n = SG n . Map.fromList . List.map (\x -> (x,[])) $ generateListVertexVector n
+-- Generate a graph with all the vertex needed, and then we will add the edges
+
+generateEmptyGraph n i o= SG n i o. Map.fromList . List.map (\x -> (x,[])) $ generateListVertexVector n
 
 computeTransitionByCircuit :: FullCircuit -> StateGraph
-computeTransitionByCircuit = undefined
+computeTransitionByCircuit fc =
+	List.foldl 
+		(\acc x ->
+			addInputsChanges 
+				x
+				List.foldl
+					(-- Probably a cast needed  
+					if (x ! fromInteger i) /= evaluate fc x i  
+						then changeS i x acc 
+						else acc
+					)
+					acc
+					[i| i <- [0..((List.length $fc_eqs fc)-1)]]
+		)
+		emptyGraph
+		(Map.keys . edges $ emptyGraph ) 
+	where 	emptyGraph = generateEmptyGraph  (v + i + o) i  o   
+		i = toInteger . List.length $ fc_inputs fc
+		o = toInteger . List.length $ fc_outputs fc
+		v = toInteger . List.length $ fc_intermediate fc
+		addInputsChanges v sg = undefined 
+		evaluate fc x i = undefined
+		changeS i x acc = undefined
 
 
 
