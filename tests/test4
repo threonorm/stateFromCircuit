@@ -1,0 +1,6 @@
+.inputs Da Za;
+.outputs Lr;
+
+Lr = Da' Za' csc0';
+csc0 = Da' + Za' csc0;
+

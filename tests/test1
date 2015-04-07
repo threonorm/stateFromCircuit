@@ -1,0 +1,8 @@
+.inputs dsr dsw ldtack dtack lds d;
+.outputs dtack lds d;
+x0 = ldtack lds;
+lds = dsw' dsr';
+x2 = dsr' ldtack;
+x3 = dsw ldtack' + dsr ldtack;
+d = d x3' + x2;
+dtack = dtack x0' + lds';

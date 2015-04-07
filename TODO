@@ -2,3 +2,5 @@ Right now a(c + d) is incorrect, you need to put an extraspace.
 1 -> Ask Jordi what do we want.
 2 -> Add support for other operators
 3 -> Right now if you define something useless, nothing happens
+4 -> Try to unify Int et Integer in the good way. I probably need to use Int everywhere but is it possible?
+	I will need to think a little bn it about it

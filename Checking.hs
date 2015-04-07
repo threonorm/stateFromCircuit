@@ -50,16 +50,16 @@ checkSanityFullCircuit fc =
 
 
 
-main :: IO()
-main =do
-	putStrLn "start" 
-	myLine <- getLine
-	result <-parseFromFile netlistParser myLine
-	case result  of
-		Left a -> putStrLn "fail"
-		Right b -> do
-				putStrLn . show . addIntermediateVariables $ b
-				putStrLn . show . checkSanityFullCircuit . addIntermediateVariables $ b
-
+--main :: IO()
+--main =do
+--	putStrLn "start" 
+--	myLine <- getLine
+--	result <-parseFromFile netlistParser myLine
+--	case result  of
+--		Left a -> putStrLn "fail"
+--		Right b -> do
+--				putStrLn . show . addIntermediateVariables $ b
+--				putStrLn . show . checkSanityFullCircuit . addIntermediateVariables $ b
+--
 
   

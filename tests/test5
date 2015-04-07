@@ -1,0 +1,6 @@
+.inputs a b;
+.outputs x;
+
+c = !(x a);
+x = b + c;
+

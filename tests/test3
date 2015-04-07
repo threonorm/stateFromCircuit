@@ -1,0 +1,3 @@
+.inputs d;
+.outputs o;
+o=d;

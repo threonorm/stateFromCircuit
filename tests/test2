@@ -1,0 +1,9 @@
+.inputs La Da Za;
+.outputs Lr Dr Zr;
+
+Lr = Da' Za' csc0';
+Dr = csc1' (csc0 + Dr);
+Zr = csc0;
+csc0 = Da' csc1' + Za' csc0;
+csc1 = La' (csc1 + Da);
+
