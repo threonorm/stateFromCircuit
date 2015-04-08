@@ -20,7 +20,7 @@ import Parser
 
 addIntermediateVariables :: Circuit -> FullCircuit
 addIntermediateVariables circuit = 
-	Fc (c_inputs circuit )
+	Fc ((c_inputs circuit) \\ (c_outputs circuit) )
 		(c_outputs circuit) 
 		(interm)
 		(c_eqs circuit) --USEFUL : put the output at the end  
