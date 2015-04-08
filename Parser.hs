@@ -9,8 +9,8 @@ import Data.Char
 import Data.List
 import Data.Functor
 import qualified Data.Map as Map
-
-import Text.Parsec 
+import Debug.Trace
+import Text.Parsec hiding (token)
 import Text.Parsec.String
 import Text.Parsec.Expr
 import Text.Parsec.Token
@@ -34,24 +34,14 @@ netlist = C <$> inputs <*> outputs <*> equations
 identStartChar = letter <|> char '_'
 identChar = identStartChar <|> digit 
 
--- Be careful with keywords which are not identifiers
--- Because of the whitespaces are significatives, I need
--- two alternatives versions, the first one eat the right-trailing
--- whitespaces, the second one eat the left-trailing whitespaces
--- This is a painful complication
 
  
 ident = try $ do
-  foo <- token1 ( (:) <$> identStartChar <*> many identChar )
+  foo <- token ( (:) <$> identStartChar <*> many identChar )
   if foo `elem` [".inputs", ".outputs"]
     then mzero
     else return foo
 
-ident2 = try $ do
-  foo <- token2 ( (:) <$> identStartChar <*> many identChar )
-  if foo `elem` [".inputs", ".outputs"]
-    then mzero
-    else return foo
 
 
 	-- b) End of line
@@ -66,47 +56,45 @@ outputs = bigList ".outputs" ident <* eodecl
 
 -- III. Equations
 
-equations = many $ equation <* eodecl
+equations = many $ equation 
 
-equation = do z <- ident
-              punctuation '='
-              e <- expr
-              return (z, e)
+equation = try $ do
+		z <- ident
+		punctuation '='
+       		e <- expr <* eodecl
+              	return (z, e)
 
 -- IV. Expressions 
 
-expr    = buildExpressionParser table term
+
+
+expr    =(try $ buildExpressionParser table term)
 
 -- The next function will change if I add new operators
 
-term    =  do { punctuation2 '(' ; x <- expr ; punctuation2 ')' ; return x } 
-	<|> Earg <$> ident2
-
+term    = 
+	 (try $ do { punctuation '(' ; x <- expr; punctuation ')' ; return x })
+	<|> Earg <$> ident
+	
 table   = 	[[prefix "!" (Enot), prefix "~" (Enot), postfix "'" (Enot)]
-		,[Infix (try $ do{ string $ " ";  -- " " mean AND in some contexts
-			 	try . token2 . string $ ""; 
-				lookAhead expr;
-				return (Ebinop And) })
-			 AssocLeft]
 		,[binary "&" (Ebinop And) AssocLeft]
+		,[binary "" (Ebinop And) AssocLeft]
 	  	,[binary "+" (Ebinop Or) AssocLeft]]
         
-binary  name fun assoc = Infix (try $ do{  try . token1 . token2 . string $ name; return fun }) assoc
-prefix  name fun       = Prefix (try $do{ try . token2 . string $ name; return fun })
-postfix  name fun       = Postfix (try $do{ try . token2 . string $ name; return fun })
+binary  name fun assoc = Infix (try $ do{  try . token . string $ name; return fun }) assoc
+prefix  name fun       = Prefix (try $do{ try . token . string $ name; return fun })
+postfix  name fun       = Postfix (try $do{ try . token . string $ name; return fun })
 
 -- Useful parsing tools
 
-keyword x = token1 . try $ string x *> notFollowedBy identChar
+keyword x = token . try $ string x *> notFollowedBy identChar
 
 -- The fact that a whitespace can be a AND make it painful, we need to
 -- sanitize to the left or to the right depending on the context
-token1 t = t <* spaces
-token2 t = spaces *> t 
+token t = t <* spaces
 
-punctuation = token1 . char
-punctuation2 = token2 . char
+punctuation = token . char
 
 bigList header eltParser = keyword header *> many eltParser  
 
-
+ 
