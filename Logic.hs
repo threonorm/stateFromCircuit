@@ -7,14 +7,13 @@ import Control.Exception (assert)
 import Control.Applicative hiding ((<|>), many)
 
 import Data.Char
-import qualified Data.List as List
+import Data.List 
 import Data.Maybe
-import Data.Vector hiding ((++))
 import Data.Functor
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
-import Debug.Trace
+import qualified Debug.Trace as D
 
 import Text.Parsec 
 import Text.Parsec.String
@@ -28,7 +27,7 @@ import FOL
 import StateGeneration
 
 import Data.Graph.Inductive.Graph
-
+import Data.Graph.Inductive.Example
 --instance Graph StateGraph where
 --	empty = 
 --	isEmpty = 
@@ -38,20 +37,21 @@ import Data.Graph.Inductive.Graph
 
 
 
---custom subgraph isomorphism algorithm
---First isIso is naive and doesn't use what we could put in the monad.
 subIsomorphisms g1 g2 = 
-	List.foldl 
-	(\acc f -> \l x -> f l x >>= acc (x:l))
-	(\l x -> guard (isIso g2 l) >> return l)
-	( repeat $ neighbor g1 g2)
+	foldr 
+	(\f acc -> \l x -> f l x >>= acc (x:l))
+	(\l x -> guard (isIso g2 $ removeLast (x:l)) >> return (x:l))
+	( replicate (noNodes g1) $ \x y -> nodes g2 \\ (y:x) ) --):(replicate (noNodes g1 -1) (\x y -> neighbors g2 y \\ x) )) -- neighbor g2)
 	where 
-		isIso g l = equal g1 $ mkGraph (extractNodes $ labNodes g) (extractEdges $ labEdges g) 
-		extractNodes = id
-		extractEdges = id
-		neighbor = undefined
-
-
+		isIso g l =equal g1' $ mkGraph
+				(fmap (\x -> (renameBy x l,())) l)
+				(fmap (\(x,y,z) -> (renameBy x l,renameBy y l ,z)) 
+				. catMaybes . fmap (extractEdges l) 
+				$ labEdges g) 
+		renameBy x = (+1) . fromJust . elemIndex x
+		g1' = nmap (\x -> ()) g1
+		extractEdges l (x,y,z) = if elem x l && elem y l then Just (x,y,z) else Nothing 
+		removeLast x = take (length x - 1) x
 
 
 -- I will need to declare some predicates for Edges, Neighbor, Edges  
