@@ -30,16 +30,35 @@ import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Example
 import Data.Graph.Inductive.PatriciaTree
 
+--Come from the lib
+nodeComp :: Eq b => LNode b -> LNode b -> Ordering
+nodeComp n@(v,_) n'@(w,_) | n == n'   = EQ
+                          | v<w       = LT
+                          | otherwise = GT
 
+slabNodes :: (Eq a,Graph gr) => gr a b -> [LNode a]
+slabNodes = sortBy nodeComp . labNodes
 
+edgeComp :: Eq b => LEdge b -> LEdge b -> Ordering
+edgeComp e@(v,w,_) e'@(x,y,_) | e == e'              = EQ
+                              | v<x || (v==x && w<y) = LT
+                              | otherwise            = GT
+
+slabEdges :: (Eq b,Graph gr) => gr a b -> [LEdge b]
+slabEdges = sortBy edgeComp . labEdges
+
+included:: (Eq a,Eq b,Graph gr) => gr a b -> gr a b -> Bool
+included g g' = slabNodes g == slabNodes g' && intersect (slabEdges g) (slabEdges g') == slabEdges g
+
+--
 
 subIsomorphisms g1 g2 = 
 	foldr 
 	(\f acc -> \l x -> f l x >>= acc (x:l))
-	(\l x -> guard (isIso g2 $ removeLast (x:l)) >> return (fmap (fromJust.lab g2)  $ x:l))
+	(\l x -> guard (isIso g2 $ removeLast (x:l)) >> return (fmap (fromJust.lab g2) . removeLast $ x:l))
 	( replicate (noNodes g1) $ \x y -> nodes g2 \\ (y:x) ) --):(replicate (noNodes g1 -1) (\x y -> neighbors g2 y \\ x) )) -- neighbor g2)
 	where 
-		isIso g l =equal g1' $ mkGraph
+		isIso g l =included g1' $ mkGraph --changeFor isIncluded
 				(fmap (\x -> (renameBy x l,())) l)
 				(fmap (\(x,y,z) -> (renameBy x l,renameBy y l ,z)) 
 				. catMaybes . fmap (extractEdges l) 
