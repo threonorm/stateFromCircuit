@@ -129,6 +129,7 @@ the following Haskell data types immediately upon reading them:
 \begin{code}
 data Term  =  Const String [Term]
            |  Var String
+	deriving (Eq,Ord)
 \end{code}
 
 We will reuse the constructor names from |FOL| later, though, so this is
