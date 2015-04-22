@@ -85,9 +85,7 @@ satifyCN i (t:q) = FOL.and (substitue i t) $ satifyCN i q
 
 substitue :: Isomorphisms -> Atom () -> Formula Input 
 substitue i (Atom s l) = foldl 
-			(\acc iso -> acc `FOL.or` if s == "E" 
-					then atom s (fmap (\x -> iso Map.! x) l) 
-					else atom s l )
+			(\acc iso -> acc `FOL.or` atom s ((fmap (\x -> iso Map.! x) $ take 2 l)++drop 2 l)) 
 				ff
 				i
 
@@ -122,6 +120,7 @@ convertGraph sg = --It is not fully built by lazyness,
 			$ StateGeneration.edges sg  
 		binary = fmap (\f->if f then '1' else '0')	
 
+
 extractPattern :: INF -> Gr String String    		
 extractPattern [] = empty  	
 extractPattern ((IClause a _):_) = inductivelyBuild a
@@ -132,13 +131,24 @@ extractPattern ((IClause a _):_) = inductivelyBuild a
 			let withNode =	insNodes 
 						(zip l .
 						 take 2 .
-						 fmap (\x->case x of
+						 filter (\x-> Prelude.not . elem x .fmap (\(a,b)-> b) $ labNodes subGraph) . fmap (\x->case x of
 								Var s -> s
 								_ -> undefined)
-						 $ ln )
+							 $ ln )
 						subGraph in
-			insEdges ([])
-				withNode
+			if s=="E" 
+				then insEdge 	(fromJust. lookup (case ln!!0 of
+									Var s -> s
+									_ -> undefined) . fmap (\(x,y)->(y,x)) $ labNodes withNode ,
+						fromJust. lookup (case ln!!1 of
+									Var s -> s
+									_ -> undefined) . fmap (\(x,y)->(y,x)) $ labNodes withNode ,
+						 case (ln!!2) of 
+							Var s -> s
+							_ -> undefined)
+						withNode
+				else withNode
+
 
 outputPersistency :: Formula Input
 outputPersistency = forall $ \sommet -> 
@@ -150,5 +160,16 @@ outputPersistency = forall $ \sommet ->
 	(forall $ \completeDiagram -> 
 	atom "E" [voisin1,completeDiagram,transac2] `impl`
 	atom "E" [voisin2,completeDiagram,transac1])))))
+
+
+main =do
+	myLine <- getLine
+	result <-parseFromFile netlistParser myLine
+	case result  of
+		Left a -> putStrLn "fail"
+		Right b -> do
+				let sg = computeTransitionByCircuit . addIntermediateVariables $b in	
+					putStrLn . prettify .extractPattern . normalize $ outputPersistency
+--					putStrLn . show . subIsomorphisms (extractPattern .normalize $ outputPersistency) (convertGraph $ sg) [] $ 0	
 
 
