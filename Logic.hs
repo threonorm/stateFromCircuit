@@ -8,6 +8,7 @@ import Control.Applicative hiding ((<|>), many, empty)
 
 import Data.Char
 import Data.List 
+import qualified Data.Vector as Vect 
 import Data.Maybe
 import Data.Functor
 import qualified Data.Map as Map
@@ -100,13 +101,26 @@ printSatFormulas formula stateGraph =
 						. fmap Var $ x)
 				 $ subIsomorphisms pattern stateGraph [] 0
 		pattern = extractPattern normalized	
---
---instance Graph StateGraph where
---	empty = 
---	isEmpty = 
---	match = 
---	mkGraph =
---	labNodes = 
+
+intF [] = 0
+intF (t:q) = if t then 2* intF q +1 else 2 * intF q 
+
+convertGraph :: StateGraph -> Gr String String
+convertGraph sg = --It is not fully built by lazyness,
+	mkGraph v e  --BIG IMPROVEMENT HERE TODO
+	where 	(v,e) = Map.foldWithKey
+			(\k (pos,neg) (accV,accE) -> 
+				let key = Vect.toList k in 
+				(if pos == [] && neg ==[]
+					then accV 
+					else (intF key, binary key):accV
+				,fmap (\x -> (intF key, intF key+2^x, show x ++ "+")) pos ++
+				 fmap (\x -> (intF key, intF key-2^x, show x ++ "-")) neg ++
+				 accE)
+			)
+			([],[])
+			$ StateGeneration.edges sg  
+		binary = fmap (\f->if f then '1' else '0')	
 
 extractPattern :: INF -> Gr String String    		
 extractPattern [] = empty  	
