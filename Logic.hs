@@ -59,7 +59,7 @@ subIsomorphisms g1 g2 =
 	(\l x -> guard (isIso g2 $ removeLast (x:l)) >> return (fmap (fromJust.lab g2) . removeLast $ x:l))
 	( replicate (noNodes g1) $ \x y -> nodes g2 \\ (y:x) ) --):(replicate (noNodes g1 -1) (\x y -> neighbors g2 y \\ x) )) -- neighbor g2)
 	where 
-		isIso g l =included g1' $ mkGraph --changeFor isIncluded
+		isIso g l =included g1' $ mkGraph --everything is here
 				(fmap (\x -> (renameBy x l,())) l)
 				(fmap (\(x,y,z) -> (renameBy x l,renameBy y l ,z)) 
 				. catMaybes . fmap (extractEdges l) 
@@ -111,9 +111,9 @@ convertGraph sg = --It is not fully built by lazyness,
 				let key = Vect.toList k in 
 				(if pos == [] && neg ==[]
 					then accV 
-					else (intF key, binary key):accV
-				,fmap (\x -> (intF key, intF key+2^x, show x ++ "+")) pos ++
-				 fmap (\x -> (intF key, intF key-2^x, show x ++ "-")) neg ++
+					else (intF key+1, binary key):accV
+				,fmap (\x -> (intF key+1, intF key+2^x +1, show x ++ "+")) pos ++
+				 fmap (\x -> (intF key+1, intF key-2^x + 1, show x ++ "-")) neg ++
 				 accE)
 			)
 			([],[])
@@ -130,8 +130,7 @@ extractPattern ((IClause a _):_) = inductivelyBuild a
 			let l = newNodes 2 subGraph in
 			let withNode =	insNodes 
 						(zip l .
-						 take 2 .
-						 filter (\x-> Prelude.not . elem x .fmap (\(a,b)-> b) $ labNodes subGraph) . fmap (\x->case x of
+						 filter (\x-> Prelude.not . elem x .fmap (\(a,b)-> b) $ labNodes subGraph) .take 2. fmap (\x->case x of
 								Var s -> s
 								_ -> undefined)
 							 $ ln )
@@ -169,7 +168,6 @@ main =do
 		Left a -> putStrLn "fail"
 		Right b -> do
 				let sg = computeTransitionByCircuit . addIntermediateVariables $b in	
-					putStrLn . prettify .extractPattern . normalize $ outputPersistency
---					putStrLn . show . subIsomorphisms (extractPattern .normalize $ outputPersistency) (convertGraph $ sg) [] $ 0	
+					putStrLn . show . subIsomorphisms (extractPattern .normalize $ outputPersistency) (convertGraph $ sg) [] $ 0	
 
 
