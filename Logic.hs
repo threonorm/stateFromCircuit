@@ -1,6 +1,6 @@
 {-# LANGUAGE TupleSections#-}
 
-module Logic where
+--module Logic where
 
 import Control.Monad
 import Control.Exception (assert)
@@ -51,7 +51,9 @@ slabEdges = sortBy edgeComp . labEdges
 included:: (Eq a,Eq b,Graph gr) => gr a b -> gr a b -> Bool
 included g g' = slabNodes g == slabNodes g' && intersect (slabEdges g) (slabEdges g') == slabEdges g
 
---
+
+
+
 
 subIsomorphisms g1 g2 = 
 	foldr 
@@ -61,34 +63,48 @@ subIsomorphisms g1 g2 =
 	where 
 		isIso g l =included g1' $ mkGraph --everything is here
 				(fmap (\x -> (renameBy x l,())) l)
-				(fmap (\(x,y,z) -> (renameBy x l,renameBy y l ,z)) 
+				(fmap (\(x,y,z) -> (renameBy x l,renameBy y l ,())) 
 				. catMaybes . fmap (extractEdges l) 
 				$ labEdges g) 
 		renameBy x = (+1) . fromJust . elemIndex x
-		g1' = nmap (\x -> ()) g1
+		g1' = emap (\x->()) $ nmap (\x -> ()) g1
 		extractEdges l (x,y,z) = if elem x l && elem y l then Just (x,y,z) else Nothing 
 		removeLast x = take (length x - 1) x
 
-type Isomorphisms = [Map.Map Term Term]
+type Isomorphism = Map.Map Term Term
+type Isomorphisms = [Isomorphism]
 
-satifyF :: Isomorphisms -> INF -> Formula Input
-satifyF i [] = tt
-satifyF i ((IClause a b):q) = FOL.and (FOL.or ( FOL.not $ satifyCN i a ) $ satifyCP i b) $ satifyF i q 
+satifyF :: Isomorphisms -> INF -> INF
+satifyF iso clause =
+	foldl (\acc i->(++) acc $ fmap 
+					(\(IClause a b) -> IClause (satifyCN i a) (satifyCP i b))
+					 clause )
+		[]	
+		iso 
 
-satifyCP :: Isomorphisms -> [Atom ()] -> Formula Input
-satifyCP i [] = ff
-satifyCP i (t:q) = FOL.or (substitue i t) $ satifyCP i q 
+satifyCP :: Isomorphism -> [Atom ()] -> [Atom ()]
+satifyCP i l =simplify . fmap (substitue i)$ l
 
-satifyCN :: Isomorphisms -> [Atom ()] -> Formula Input
-satifyCN i [] = tt
-satifyCN i (t:q) = FOL.and (substitue i t) $ satifyCN i q
+satifyCN :: Isomorphism -> [Atom ()] -> [Atom ()]
+satifyCN i l= simplify. fmap (substitue i) $l
 
-substitue :: Isomorphisms -> Atom () -> Formula Input 
-substitue i (Atom s l) = foldl 
-			(\acc iso -> acc `FOL.or` atom s ((fmap (\x -> iso Map.! x) $ take 2 l)++drop 2 l)) 
-				ff
-				i
+substitue :: Isomorphism -> Atom () -> Atom ()
+substitue i (Atom s l) =
+	Atom s ((fmap (\x -> i Map.! x) $ take 2 l)++drop 2 l) 
 
+
+simplify :: [ Atom () ] -> [ Atom () ]
+simplify x =fromMaybe [] . foldl 
+		(\acc (Atom s l) -> case acc of
+					Nothing -> Nothing
+					Just j -> if s=="Eq" 
+						then	if l!!0 == l!!1 
+								then Nothing
+								else Just j
+			 			else Just $ (Atom s l):j) 
+		(Just [])
+		$ x	
+		
 
 printSatFormulas formula stateGraph = 
 	satifyF isomorphisms normalized
@@ -123,7 +139,7 @@ convertGraph sg = --It is not fully built by lazyness,
 
 extractPattern :: INF -> Gr String String    		
 extractPattern [] = empty  	
-extractPattern ((IClause a _):_) = inductivelyBuild a
+extractPattern arg1@((IClause a q):l) = addVertex (extractVertex arg1) $ inductivelyBuild a
 	where 	inductivelyBuild [] = empty
 		inductivelyBuild (Atom s ln:q) = 
 			let subGraph = inductivelyBuild q in
@@ -148,6 +164,17 @@ extractPattern ((IClause a _):_) = inductivelyBuild a
 						withNode
 				else withNode
 
+giveName x = case x of
+		Atom s l -> fmap (\m -> case m of Var s -> s) $ take 2 l 
+
+extractVertex :: INF -> [String]
+extractVertex arg1 = concat . concat .  fmap (\x -> case x of
+				IClause a b -> (fmap giveName a) ++ fmap giveName b)  $ arg1
+
+addVertex [] g = g
+addVertex (t:q) g =if elem t . fmap snd $ labNodes g
+			then addVertex q g
+			else addVertex q (insNode (head $ newNodes 1 g,t) g)
 
 outputPersistency :: Formula Input
 outputPersistency = forall $ \sommet -> 
@@ -168,6 +195,8 @@ main =do
 		Left a -> putStrLn "fail"
 		Right b -> do
 				let sg = computeTransitionByCircuit . addIntermediateVariables $b in	
-					putStrLn . show . subIsomorphisms (extractPattern .normalize $ outputPersistency) (convertGraph $ sg) [] $ 0	
+					do 	putStrLn .show . convertGraph $ sg
+						putStrLn . show . extractPattern . normalize $ outputPersistency
+						putStrLn . show . pretty . printSatFormulas outputPersistency $ convertGraph sg
 
 

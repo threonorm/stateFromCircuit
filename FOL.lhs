@@ -130,6 +130,11 @@ the following Haskell data types immediately upon reading them:
 data Term  =  Const String [Term]
            |  Var String
 	deriving (Eq,Ord)
+
+instance Show Term where
+	show x = case x of
+		Const s l -> undefined 
+		Var s -> s
 \end{code}
 
 We will reuse the constructor names from |FOL| later, though, so this is
