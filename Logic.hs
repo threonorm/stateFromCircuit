@@ -74,40 +74,51 @@ subIsomorphisms g1 g2 =
 type Isomorphism = Map.Map Term Term
 type Isomorphisms = [Isomorphism]
 
-satifyF :: Isomorphisms -> INF -> INF
-satifyF iso clause =
+--satifyF :: Isomorphisms -> INF -> INF
+satifyF g iso clause =
 	foldl (\acc i->(++) acc $ fmap 
-					(\(IClause a b) -> IClause (satifyCN i a) (satifyCP i b))
+					(\(IClause a b) -> IClause (satifyCN g i a) (satifyCP g i b))
 					 clause )
 		[]	
 		iso 
 
-satifyCP :: Isomorphism -> [Atom ()] -> [Atom ()]
-satifyCP i l =simplify . fmap (substitue i)$ l
+--satifyCP :: Isomorphism -> [Atom ()] -> [Atom ()]
+satifyCP g i l =simplify g. fmap (substitue i)$ l
 
-satifyCN :: Isomorphism -> [Atom ()] -> [Atom ()]
-satifyCN i l= simplify. fmap (substitue i) $l
+--satifyCN :: Isomorphism -> [Atom ()] -> [Atom ()]
+satifyCN g i l= simplify g. fmap (substitue i) $l
 
 substitue :: Isomorphism -> Atom () -> Atom ()
 substitue i (Atom s l) =
 	Atom s ((fmap (\x -> i Map.! x) $ take 2 l)++drop 2 l) 
 
 
-simplify :: [ Atom () ] -> [ Atom () ]
-simplify x =fromMaybe [] . foldl 
+--simplify :: [ Atom () ] -> [ Atom () ]
+simplify g x =fromMaybe [] . foldl 
 		(\acc (Atom s l) -> case acc of
 					Nothing -> Nothing
 					Just j -> if s=="Eq" 
 						then	if l!!0 == l!!1 
 								then Nothing
 								else Just j
-			 			else Just $ (Atom s l):j) 
+			 			else if isIn l g 
+							then Just $ (Atom s l):j
+							else Just j) 
 		(Just [])
 		$ x	
-		
+	
+
+isIn l g = elem secondVertice $ neighbors g firstVertice 
+	where 	noeuds = catMaybes . fmap (\(x,y)-> if (Var x) `elem` l 
+			then Just (Var x,y)
+			else Nothing )
+			$ fmap (\(x,y)->(y,x)) dic
+		dic = labNodes g
+		firstVertice= fromJust . lookup (l!!0) $ noeuds
+		secondVertice = fromJust. lookup (l!!1) $ noeuds
 
 printSatFormulas formula stateGraph = 
-	satifyF isomorphisms normalized
+	satifyF stateGraph isomorphisms normalized
 	where	normalized = normalize formula
 		isomorphisms =fmap (\x -> Map.fromList . zip 
 						( fmap 	(FOL.Var . fromJust.lab pattern) 
@@ -158,9 +169,7 @@ extractPattern arg1@((IClause a q):l) = addVertex (extractVertex arg1) $ inducti
 						fromJust. lookup (case ln!!1 of
 									Var s -> s
 									_ -> undefined) . fmap (\(x,y)->(y,x)) $ labNodes withNode ,
-						 case (ln!!2) of 
-							Var s -> s
-							_ -> undefined)
+							"")
 						withNode
 				else withNode
 
@@ -179,14 +188,18 @@ addVertex (t:q) g =if elem t . fmap snd $ labNodes g
 outputPersistency :: Formula Input
 outputPersistency = forall $ \sommet -> 
 	(forall $ \voisin1 -> (forall $ \voisin2 ->
-	(forall $ \transac1 -> (forall $ \transac2 ->
-	atom "E" [sommet,voisin1,transac1] `impl`
-	atom "E" [sommet,voisin2,transac2] `impl`
+	atom "E" [sommet,voisin1] `impl`
+	atom "E" [sommet,voisin2] `impl`
 	(FOL.not $ atom "Eq" [voisin1,voisin2]) `impl`
 	(forall $ \completeDiagram -> 
-	atom "E" [voisin1,completeDiagram,transac2] `impl`
-	atom "E" [voisin2,completeDiagram,transac1])))))
+	atom "E" [voisin1,completeDiagram] `impl`
+	atom "E" [voisin2,completeDiagram])))
 
+--For Minisat+
+variablesSat :: Gr String String -> String
+variablesSat sg = (++";") . ("min: -1*" ++) . intercalate " -1*" . fmap (\(x,y)->
+					(\(a,b)->"E"++a++b).(\(a,b)->(fromJust a, fromJust b)) $(lab sg x ,lab sg y))
+				$ Data.Graph.Inductive.Graph.edges sg
 
 main =do
 	myLine <- getLine
@@ -195,8 +208,8 @@ main =do
 		Left a -> putStrLn "fail"
 		Right b -> do
 				let sg = computeTransitionByCircuit . addIntermediateVariables $b in	
-					do 	putStrLn .show . convertGraph $ sg
-						putStrLn . show . extractPattern . normalize $ outputPersistency
-						putStrLn . show . pretty . printSatFormulas outputPersistency $ convertGraph sg
+					let  csg = convertGraph sg in
+					do 	putStrLn $ variablesSat csg
+						putStrLn . show . pretty . printSatFormulas outputPersistency $ csg
 
 

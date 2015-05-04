@@ -39,6 +39,7 @@ each stage of the transformation.  \end{introduction}
 
 module FOL where
 import Text.PrettyPrint.HughesPJ 
+import qualified Data.List as List
 import Control.Monad.State
 import Prelude hiding (or,and,not)
 \end{code}
@@ -1067,18 +1068,19 @@ instance Pretty CNF where
 
 
 instance Pretty IClause where
-    pretty (IClause p q) = (brackets $ sepBy "/\\" $ fmap pretty $ p)
-                           <+> text "=>" <+>
-                           (brackets $ sepBy "\\/" $ fmap pretty $ q)
+    pretty (IClause p q) = (sepBy ""$ fmap (\x ->text " -1*" <>x) $ fmap pretty $ p)
+                           <+>
+                           ( sepBy "" $ fmap (\x -> text " +1*" <> x) $ fmap  pretty $ q)
 
 instance Pretty INF where
-    pretty formula = vcat $ fmap pretty $ formula
+    pretty formula = vcat . fmap (\x->x<>text " >=1;") $ fmap pretty $ formula
 
 
 instance Pretty Term where
     pretty (Var x)        = text x
     pretty (Const c [])   = text c
-    pretty (Const c args) = text c <> parens (sepBy "," (fmap pretty args))
+    --pretty (Const c args) = text c <> parens (sepBy "," (fmap pretty args))
+    pretty (Const c args) = text c <> (hcat $ fmap pretty args)
 
 pprint :: Pretty a => a -> IO ()
 pprint = putStrLn . render . pretty
