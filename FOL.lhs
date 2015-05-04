@@ -1072,8 +1072,8 @@ instance Pretty IClause where
                            <+>
                            ( sepBy "" $ fmap (\x -> text " +1*" <> x) $ fmap  pretty $ q)
 
-instance Pretty INF where
-    pretty formula = vcat . fmap (\x->x<>text " >=1;") $ fmap pretty $ formula
+instance Pretty INF where --Here a disguting hack is hiding
+    pretty formula = vcat . fmap (\x->x<>text " >="<> (text .show . (1-). length . filter ('-'==) . render $ x) <> semi) $ fmap pretty $ formula
 
 
 instance Pretty Term where
