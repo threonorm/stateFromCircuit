@@ -59,7 +59,7 @@ subIsomorphisms g1 g2 =
 	foldr 
 	(\f acc -> \l x -> f l x >>= acc (x:l))
 	(\l x -> guard (isIso g2 $ removeLast (x:l)) >> return (fmap (fromJust.lab g2) . removeLast $ x:l))
-	( replicate (noNodes g1) $ \x y -> nodes g2 \\ (y:x) ) --):(replicate (noNodes g1 -1) (\x y -> neighbors g2 y \\ x) )) -- neighbor g2)
+	( replicate (noNodes g1) $ \x y -> nodes g2 \\ (y:x) ) --Here I need an improvment 
 	where 
 		isIso g l =included g1' $ mkGraph --everything is here
 				(fmap (\x -> (renameBy x l,())) l)
@@ -153,7 +153,7 @@ convertGraph sg = --It is not fully built by lazyness,
 
 extractPattern :: INF -> [Gr String String]    		
 extractPattern [] = [empty] 	
-extractPattern arg1@((IClause a q):l) = addVertex q (extractVertex arg1) $ inductivelyBuild a
+extractPattern arg1@((IClause a q):l) = addVertex q (nub $ extractVertex arg1) $ inductivelyBuild a
 	where 	inductivelyBuild [] = empty
 		inductivelyBuild (Atom s ln:q) = 
 			let subGraph = inductivelyBuild q in
@@ -191,17 +191,19 @@ vertexOf g l =fromJust . lookup l .fmap swap  $ labNodes g
 possibleEdges g [] t = []
 possibleEdges g ((Atom s l):q) t = 
 	if ((t ==).(\m -> case m of Var s -> s) $ l!!0) || ((t==).(\m -> case m of Var s -> s)$ l!!1)
-		then (vertexOf g. (\m -> case m of Var s -> s) $ l!!0, vertexOf g. (\m -> case m of Var s -> s) $ l!!1):possibleEdges g q t  
+		then ((\m -> case m of Var s -> s) $ l!!0,(\m -> case m of Var s -> s) $ l!!1):possibleEdges g q t  
 		else possibleEdges g q t 
 
 
 
 addVertex b [] g = return g
-addVertex c (t:q) g = do
-			(a,b) <- possibleEdges g c t --Not sure, if the other end is not in the graph... 
-			guard $ ( elem a . fmap fst $ labNodes g) || (elem b . fmap fst $ labNodes g) 
-			addVertex c q (insEdge (a,b,"") $ insNode (head $ newNodes 1 g,t) g)
-
+addVertex c (t:q) g = (\x-> if x==[] then addVertex c q g else x) $
+		do
+			(a,b) <-possibleEdges g c $t --Not sure, if the other end is not in the graph... 
+			if (Prelude.not . elem t . fmap snd $ labNodes g)&&(( elem a . fmap snd $ labNodes g) || (elem b . fmap snd $ labNodes g)) 
+				then let ng = insNode (head $ newNodes 1 g,t) g in
+					 addVertex c q (insEdge (vertexOf ng $ a, vertexOf ng $ b,"") $ ng)
+				else addVertex c q g
 outputPersistency :: Formula Input
 outputPersistency = forall $ \sommet -> 
 	(forall $ \voisin1 -> (forall $ \voisin2 ->
@@ -226,7 +228,7 @@ main =do
 		Right b -> do
 				let sg = computeTransitionByCircuit . addIntermediateVariables $b in	
 					let  csg = convertGraph sg in
-					do 	putStrLn . show . extractPattern .normalize $ outputPersistency 
+					do 	putStrLn . show . allIsomorphisms outputPersistency $ csg
 
 						--putStrLn $ variablesSat csg
 						--putStrLn . show . pretty . printSatFormulas outputPersistency $ csg
