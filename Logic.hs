@@ -13,7 +13,7 @@ import Data.Maybe
 import Data.Functor
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-
+import Data.Tuple (swap)
 import qualified Debug.Trace as D
 
 import Text.Parsec 
@@ -112,20 +112,23 @@ isIn l g = elem secondVertice $ neighbors g firstVertice
 	where 	noeuds = catMaybes . fmap (\(x,y)-> if (Var x) `elem` l 
 			then Just (Var x,y)
 			else Nothing )
-			$ fmap (\(x,y)->(y,x)) dic
+			$ fmap swap dic
 		dic = labNodes g
 		firstVertice= fromJust . lookup (l!!0) $ noeuds
 		secondVertice = fromJust. lookup (l!!1) $ noeuds
 
-printSatFormulas formula stateGraph = 
-	satifyF stateGraph isomorphisms normalized
-	where	normalized = normalize formula
-		isomorphisms =fmap (\x -> Map.fromList . zip 
+allIsomorphisms formula stateGraph = 
+	 [isomorphisms pattern | pattern <- patterns]		
+	where	isomorphisms pattern = fmap (\x -> Map.fromList . zip 
 						( fmap 	(FOL.Var . fromJust.lab pattern) 
 							$ nodes pattern)
 						. fmap Var $ x)
 				 $ subIsomorphisms pattern stateGraph [] 0
-		pattern = extractPattern normalized	
+		patterns = extractPattern . normalize $ formula 
+
+printSatFormulas formula stateGraph = 
+	satifyF stateGraph (concat $ allIsomorphisms formula stateGraph) normalized
+	where	normalized = normalize formula
 
 intF [] = 0
 intF (t:q) = if t then 2* intF q +1 else 2 * intF q 
@@ -148,9 +151,9 @@ convertGraph sg = --It is not fully built by lazyness,
 		binary = fmap (\f->if f then '1' else '0')	
 
 
-extractPattern :: INF -> Gr String String    		
-extractPattern [] = empty  	
-extractPattern arg1@((IClause a q):l) = addVertex (extractVertex arg1) $ inductivelyBuild a
+extractPattern :: INF -> [Gr String String]    		
+extractPattern [] = [empty] 	
+extractPattern arg1@((IClause a q):l) = addVertex q (extractVertex arg1) $ inductivelyBuild a
 	where 	inductivelyBuild [] = empty
 		inductivelyBuild (Atom s ln:q) = 
 			let subGraph = inductivelyBuild q in
@@ -173,6 +176,8 @@ extractPattern arg1@((IClause a q):l) = addVertex (extractVertex arg1) $ inducti
 						withNode
 				else withNode
 
+
+
 giveName x = case x of
 		Atom s l -> fmap (\m -> case m of Var s -> s) $ take 2 l 
 
@@ -180,10 +185,22 @@ extractVertex :: INF -> [String]
 extractVertex arg1 = concat . concat .  fmap (\x -> case x of
 				IClause a b -> (fmap giveName a) ++ fmap giveName b)  $ arg1
 
-addVertex [] g = g
-addVertex (t:q) g =if elem t . fmap snd $ labNodes g
-			then addVertex q g
-			else addVertex q (insNode (head $ newNodes 1 g,t) g)
+
+vertexOf g l =fromJust . lookup l .fmap swap  $ labNodes g   
+
+possibleEdges g [] t = []
+possibleEdges g ((Atom s l):q) t = 
+	if ((t ==).(\m -> case m of Var s -> s) $ l!!0) || ((t==).(\m -> case m of Var s -> s)$ l!!1)
+		then (vertexOf g. (\m -> case m of Var s -> s) $ l!!0, vertexOf g. (\m -> case m of Var s -> s) $ l!!1):possibleEdges g q t  
+		else possibleEdges g q t 
+
+
+
+addVertex b [] g = return g
+addVertex c (t:q) g = do
+			(a,b) <- possibleEdges g c t --Not sure, if the other end is not in the graph... 
+			guard $ ( elem a . fmap fst $ labNodes g) || (elem b . fmap fst $ labNodes g) 
+			addVertex c q (insEdge (a,b,"") $ insNode (head $ newNodes 1 g,t) g)
 
 outputPersistency :: Formula Input
 outputPersistency = forall $ \sommet -> 
@@ -209,7 +226,9 @@ main =do
 		Right b -> do
 				let sg = computeTransitionByCircuit . addIntermediateVariables $b in	
 					let  csg = convertGraph sg in
-					do 	putStrLn $ variablesSat csg
-						putStrLn . show . pretty . printSatFormulas outputPersistency $ csg
+					do 	putStrLn . show . extractPattern .normalize $ outputPersistency 
+
+						--putStrLn $ variablesSat csg
+						--putStrLn . show . pretty . printSatFormulas outputPersistency $ csg
 
 
