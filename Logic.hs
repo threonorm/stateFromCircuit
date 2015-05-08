@@ -31,6 +31,7 @@ import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Example
 import Data.Graph.Inductive.PatriciaTree
 
+import System.Environment
 --Come from the lib
 nodeComp :: Eq b => LNode b -> LNode b -> Ordering
 nodeComp n@(v,_) n'@(w,_) | n == n'   = EQ
@@ -52,15 +53,22 @@ included:: (Eq a,Eq b,Graph gr) => gr a b -> gr a b -> Bool
 included g g' = slabNodes g == slabNodes g' && intersect (slabEdges g) (slabEdges g') == slabEdges g
 
 
-
-
-
 subIsomorphisms g1 g2 = 
 	foldr 
-	(\f acc -> \l x -> f l x >>= acc (x:l))
-	(\l x -> guard (isIso g2 $ removeLast (x:l)) >> return (fmap (fromJust.lab g2) . removeLast $ x:l))
-	( replicate (noNodes g1) $ \x y -> nodes g2 \\ (y:x) ) --Here I need an improvment 
-	where 
+	(\f acc -> \l -> f l >>= acc)
+	(\l -> guard (isIso g2 $ l) >> return (fmap (fromJust.lab g2) $ l))
+	. reverse . snd . foldl 	 
+		(\(prev,sol) new-> (\x -> (new:prev,x)) . (:sol) $ (\x -> do
+				 	y <- choice g2 prev new 0 x \\ x 
+					return $ y:x)  
+		)
+		([],[])
+		 $ nodes g1--Here I need an improvment 
+	where
+		choice g2 [] new n = (\x -> nodes g2) --Eta expansion not needed, test of style
+		choice g2 (t:q) new n = (\x -> if elem new $ pre g2 t
+					then suc g2 . (x!!) $ n --not sure
+					else choice g2 q new (1+n) x)
 		isIso g l =included g1' $ mkGraph --everything is here
 				(fmap (\x -> (renameBy x l,())) l)
 				(fmap (\(x,y,z) -> (renameBy x l,renameBy y l ,())) 
@@ -69,7 +77,7 @@ subIsomorphisms g1 g2 =
 		renameBy x = (+1) . fromJust . elemIndex x
 		g1' = emap (\x->()) $ nmap (\x -> ()) g1
 		extractEdges l (x,y,z) = if elem x l && elem y l then Just (x,y,z) else Nothing 
-		removeLast x = take (length x - 1) x
+		--removeLast x = take (length x - 1) x
 
 type Isomorphism = Map.Map Term Term
 type Isomorphisms = [Isomorphism]
@@ -108,7 +116,7 @@ simplify g x =fromMaybe [] . foldl
 		$ x	
 	
 
-isIn l g = elem secondVertice $ neighbors g firstVertice 
+isIn l g = elem secondVertice $ suc g firstVertice 
 	where 	noeuds = catMaybes . fmap (\(x,y)-> if (Var x) `elem` l 
 			then Just (Var x,y)
 			else Nothing )
@@ -123,7 +131,7 @@ allIsomorphisms formula stateGraph =
 						( fmap 	(FOL.Var . fromJust.lab pattern) 
 							$ nodes pattern)
 						. fmap Var $ x)
-				 $ subIsomorphisms pattern stateGraph [] 0
+				 $ subIsomorphisms pattern stateGraph []
 		patterns = extractPattern . normalize $ formula 
 
 printSatFormulas formula stateGraph = 
@@ -221,16 +229,15 @@ variablesSat sg = (++";") . ("min: -1*" ++) . intercalate " -1*" . fmap (\(x,y)-
 				$ Data.Graph.Inductive.Graph.edges sg
 
 main =do
-	myLine <- getLine
-	result <-parseFromFile netlistParser myLine
+	lArgs <- getArgs
+	result <-parseFromFile netlistParser . (!!0) $ lArgs
 	case result  of
 		Left a -> putStrLn "fail"
 		Right b -> do
 				let sg = computeTransitionByCircuit . addIntermediateVariables $b in	
 					let  csg = convertGraph sg in
-					do 	putStrLn . show . allIsomorphisms outputPersistency $ csg
-
-						--putStrLn $ variablesSat csg
-						--putStrLn . show . pretty . printSatFormulas outputPersistency $ csg
+					do	
+						putStrLn $ variablesSat csg
+						putStrLn . show . pretty . printSatFormulas outputPersistency $ csg
 
 

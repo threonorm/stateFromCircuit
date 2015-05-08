@@ -12,7 +12,7 @@ import qualified Data.Map as Map
 import Debug.Trace
 import Text.Parsec hiding (token)
 import Text.Parsec.String
-import Text.Parsec.Expr
+import Text.Parsec.Expr 
 import Text.Parsec.Token
  
 import AST
@@ -36,12 +36,13 @@ identChar = identStartChar <|> digit
 
 
  
-ident = try $ do
+iden = try $ do
   foo <- token ( (:) <$> identStartChar <*> many identChar )
   if foo `elem` [".inputs", ".outputs"]
     then mzero
     else return foo
 
+ident = iden <|> do {punctuation '['; l<-iden ; punctuation ']'; return l; }  
 
 
 	-- b) End of line
@@ -51,8 +52,8 @@ eodecl = punctuation ';'
 
 -- II. Headers
 
-inputs = bigList ".inputs" ident <* eodecl
-outputs = bigList ".outputs" ident <* eodecl
+inputs = bigList "INORDER =" ident <* eodecl
+outputs = bigList "OUTORDER =" ident <* eodecl
 
 -- III. Equations
 
