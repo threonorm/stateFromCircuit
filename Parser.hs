@@ -38,7 +38,7 @@ identChar = identStartChar <|> digit
  
 iden = try $ do
   foo <- token ( (:) <$> identStartChar <*> many identChar )
-  if foo `elem` [".inputs", ".outputs"]
+  if foo `elem` ["INORDER", "OUTORDER"]
     then mzero
     else return foo
 

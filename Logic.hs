@@ -31,6 +31,7 @@ import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Example
 import Data.Graph.Inductive.PatriciaTree
 
+import System.IO.Unsafe (unsafePerformIO)
 import System.Environment
 --Come from the lib
 nodeComp :: Eq b => LNode b -> LNode b -> Ordering
@@ -66,9 +67,11 @@ subIsomorphisms g1 g2 =
 		 $ nodes g1--Here I need an improvment 
 	where
 		choice g2 [] new n = (\x -> nodes g2) --Eta expansion not needed, test of style
-		choice g2 (t:q) new n = (\x -> if elem new $ pre g2 t
-					then suc g2 . (x!!) $ n --not sure
-					else choice g2 q new (1+n) x)
+		choice g2 (t:q) new n = (\x -> if elem new $ pre g1 t
+					then pre g2 . (x!!) $ n --not sure
+					else if elem new $ suc g1 t 
+						then suc g2 . (x!!) $ n 
+						else choice g2 q new (1+n) x)
 		isIso g l =included g1' $ mkGraph --everything is here
 				(fmap (\x -> (renameBy x l,())) l)
 				(fmap (\(x,y,z) -> (renameBy x l,renameBy y l ,())) 
@@ -77,7 +80,6 @@ subIsomorphisms g1 g2 =
 		renameBy x = (+1) . fromJust . elemIndex x
 		g1' = emap (\x->()) $ nmap (\x -> ()) g1
 		extractEdges l (x,y,z) = if elem x l && elem y l then Just (x,y,z) else Nothing 
-		--removeLast x = take (length x - 1) x
 
 type Isomorphism = Map.Map Term Term
 type Isomorphisms = [Isomorphism]
@@ -90,10 +92,8 @@ satifyF g iso clause =
 		[]	
 		iso 
 
---satifyCP :: Isomorphism -> [Atom ()] -> [Atom ()]
 satifyCP g i l =simplify g. fmap (substitue i)$ l
 
---satifyCN :: Isomorphism -> [Atom ()] -> [Atom ()]
 satifyCN g i l= simplify g. fmap (substitue i) $l
 
 substitue :: Isomorphism -> Atom () -> Atom ()
@@ -102,6 +102,7 @@ substitue i (Atom s l) =
 
 
 --simplify :: [ Atom () ] -> [ Atom () ]
+--This is not ocrrect because of the Eq proposition TODO
 simplify g x =fromMaybe [] . foldl 
 		(\acc (Atom s l) -> case acc of
 					Nothing -> Nothing
@@ -132,11 +133,12 @@ allIsomorphisms formula stateGraph =
 							$ nodes pattern)
 						. fmap Var $ x)
 				 $ subIsomorphisms pattern stateGraph []
-		patterns = extractPattern . normalize $ formula 
+		patterns = extractPattern formula 
 
-printSatFormulas formula stateGraph = 
-	satifyF stateGraph (concat $ allIsomorphisms formula stateGraph) normalized
-	where	normalized = normalize formula
+printSatFormulas [] stateGraph = []
+printSatFormulas normalized@(t:q) stateGraph = 
+	satifyF stateGraph (concat $ allIsomorphisms normalized stateGraph) normalized
+	++ ( printSatFormulas q stateGraph)
 
 intF [] = 0
 intF (t:q) = if t then 2* intF q +1 else 2 * intF q 
@@ -160,7 +162,7 @@ convertGraph sg = --It is not fully built by lazyness,
 
 
 extractPattern :: INF -> [Gr String String]    		
-extractPattern [] = [empty] 	
+extractPattern [] = [empty] -- NOW I BELIEVE this addVertex is bullshit	
 extractPattern arg1@((IClause a q):l) = addVertex q (nub $ extractVertex arg1) $ inductivelyBuild a
 	where 	inductivelyBuild [] = empty
 		inductivelyBuild (Atom s ln:q) = 
@@ -185,7 +187,7 @@ extractPattern arg1@((IClause a q):l) = addVertex q (nub $ extractVertex arg1) $
 				else withNode
 
 
-
+--USELESS
 giveName x = case x of
 		Atom s l -> fmap (\m -> case m of Var s -> s) $ take 2 l 
 
@@ -197,30 +199,33 @@ extractVertex arg1 = concat . concat .  fmap (\x -> case x of
 vertexOf g l =fromJust . lookup l .fmap swap  $ labNodes g   
 
 possibleEdges g [] t = []
-possibleEdges g ((Atom s l):q) t = 
+possibleEdges g ((Atom s l):q) t =
+	if s=="E" then 
 	if ((t ==).(\m -> case m of Var s -> s) $ l!!0) || ((t==).(\m -> case m of Var s -> s)$ l!!1)
 		then ((\m -> case m of Var s -> s) $ l!!0,(\m -> case m of Var s -> s) $ l!!1):possibleEdges g q t  
 		else possibleEdges g q t 
+	else possibleEdges g q t
 
-
-
+-- The followign function was a good exercice but useless and actually false for the purpose. 
+-- It is dead code for the outputPersistency.
 addVertex b [] g = return g
 addVertex c (t:q) g = (\x-> if x==[] then addVertex c q g else x) $
 		do
-			(a,b) <-possibleEdges g c $t --Not sure, if the other end is not in the graph... 
+			(a,b) <-possibleEdges g c $t --Dangerous : it build only positive instances 
 			if (Prelude.not . elem t . fmap snd $ labNodes g)&&(( elem a . fmap snd $ labNodes g) || (elem b . fmap snd $ labNodes g)) 
 				then let ng = insNode (head $ newNodes 1 g,t) g in
 					 addVertex c q (insEdge (vertexOf ng $ a, vertexOf ng $ b,"") $ ng)
 				else addVertex c q g
+
 outputPersistency :: Formula Input
 outputPersistency = forall $ \sommet -> 
 	(forall $ \voisin1 -> (forall $ \voisin2 ->
 	atom "E" [sommet,voisin1] `impl`
-	atom "E" [sommet,voisin2] `impl`
-	(FOL.not $ atom "Eq" [voisin1,voisin2]) `impl`
-	(forall $ \completeDiagram -> 
+	(atom "E" [sommet,voisin2] `impl`
+	((FOL.not $ atom "Eq" [voisin1,voisin2]) `impl`
+	((forall $ \completeDiagram -> 
 	atom "E" [voisin1,completeDiagram] `impl`
-	atom "E" [voisin2,completeDiagram])))
+	atom "E" [voisin2,completeDiagram]))))))
 
 --For Minisat+
 variablesSat :: Gr String String -> String
@@ -232,12 +237,12 @@ main =do
 	lArgs <- getArgs
 	result <-parseFromFile netlistParser . (!!0) $ lArgs
 	case result  of
-		Left a -> putStrLn "fail"
+		Left a -> undefined
 		Right b -> do
-				let sg = computeTransitionByCircuit . addIntermediateVariables $b in	
+				let sg = computeTransitionByCircuit . addIntermediateVariables $ b in	
 					let  csg = convertGraph sg in
 					do	
 						putStrLn $ variablesSat csg
-						putStrLn . show . pretty . printSatFormulas outputPersistency $ csg
+						putStrLn . show . pretty . printSatFormulas (normalize outputPersistency) $ csg
 
 
