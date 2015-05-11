@@ -1,6 +1,6 @@
-.inputs Da Za;
-.outputs Lr;
+INORDER = Da Za;
+OUTORDER = Lr;
 
-Lr = Da' Za' csc0';
+Lr = Lr + Da' Za' csc0';
 csc0 = Da' + Za' csc0;
 

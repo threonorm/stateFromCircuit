@@ -27,11 +27,15 @@ import Parser
 import FOL
 import StateGeneration
 import Logic hiding (main)
- 
+
+import Data.GraphViz 
+import Data.GraphViz.Printing hiding (char)
+
 import Data.Graph.Inductive.Graph 
 import Data.Graph.Inductive.Example
 import Data.Graph.Inductive.PatriciaTree
 
+import Data.Text.Lazy (unpack)
 import System.Environment
 
 
@@ -56,5 +60,5 @@ main =do
 				let sg = computeTransitionByCircuit . addIntermediateVariables $b in	
 					let  csg = convertGraph sg in
 					do
-						putStrLn . prettify $ ((mkGraph (labNodes csg) .fmap (\(x,y) -> (vertexOf csg x, vertexOf csg y,"")) $ myE) :: Gr String String)	
+						putStrLn . unpack . renderDot . toDot .graphToDot nonClusteredParams $ ((mkGraph (labNodes csg) .fmap (\(x,y) -> (vertexOf csg x, vertexOf csg y,"")) $ myE) :: Gr String String)	
 		_-> putStrLn "You should go to hell. Two times."

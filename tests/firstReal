@@ -1,0 +1,8 @@
+.inputs lr ra;
+.outputs la rr csc0 csc1 csc2 csc3;
+la = csc0; 
+rr = csc2 (rr + csc1'); 
+csc0 = csc3' (csc1 (rr' + csc2') + csc0); 
+csc1 = csc0' csc3' + csc1 csc2'; 
+csc2 = ra' (csc2 + csc1); 
+csc3 = csc3 (csc2 rr' + csc1) + lr'; 

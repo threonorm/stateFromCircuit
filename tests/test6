@@ -1,0 +1,5 @@
+.inputs d;
+.outputs o l e ;
+o=d d + l;
+e= o e+  l';
+l = d + e;
