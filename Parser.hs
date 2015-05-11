@@ -98,4 +98,17 @@ punctuation = token . char
 
 bigList header eltParser = keyword header *> many eltParser  
 
+-- Reconstitution parser
+chunkParser = manyTill anyChar . try $ 	
+	keyword "v"
+
+
+oneEdge = punctuation 'E' *> many (char '0' <|> char '1') <* spaces 
+--I don't compute anything, I just cut the string in the middle
+edgeParser =(\x -> let sz = length x in
+			(take (sz `quot` 2) $ x, drop (sz `quot` 2) $ x)) <$> try ((try .many $ punctuation '-' *>oneEdge) *> oneEdge <* spaces )
+
+solutionParser = chunkParser *> ( many $edgeParser)  <* ((try. many $ punctuation '-' *> oneEdge) <* keyword "c") 
+
+
  

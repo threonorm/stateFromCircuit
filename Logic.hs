@@ -31,8 +31,6 @@ import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Example
 import Data.Graph.Inductive.PatriciaTree
 
-import System.IO.Unsafe (unsafePerformIO)
-import System.Environment
 --Come from the lib
 nodeComp :: Eq b => LNode b -> LNode b -> Ordering
 nodeComp n@(v,_) n'@(w,_) | n == n'   = EQ
@@ -233,16 +231,5 @@ variablesSat sg = (++";") . ("min: -1*" ++) . intercalate " -1*" . fmap (\(x,y)-
 					(\(a,b)->"E"++a++b).(\(a,b)->(fromJust a, fromJust b)) $(lab sg x ,lab sg y))
 				$ Data.Graph.Inductive.Graph.edges sg
 
-main =do
-	lArgs <- getArgs
-	result <-parseFromFile netlistParser . (!!0) $ lArgs
-	case result  of
-		Left a -> undefined
-		Right b -> do
-				let sg = computeTransitionByCircuit . addIntermediateVariables $ b in	
-					let  csg = convertGraph sg in
-					do	
-						putStrLn $ variablesSat csg
-						putStrLn . show . pretty . printSatFormulas (normalize outputPersistency) $ csg
 
 

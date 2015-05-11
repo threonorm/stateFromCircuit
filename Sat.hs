@@ -1,6 +1,5 @@
 {-# LANGUAGE TupleSections#-}
 
-
 import Control.Monad
 import Control.Exception (assert)
 import Control.Applicative hiding ((<|>), many, empty)
@@ -25,27 +24,24 @@ import Checking
 import Parser
 import FOL
 import StateGeneration
-import Logic 
-
-import Data.GraphViz 
-import Data.GraphViz.Printing hiding (char)
+import Logic
 
 import Data.Graph.Inductive.Graph 
 import Data.Graph.Inductive.Example
 import Data.Graph.Inductive.PatriciaTree
 
-import Data.Text.Lazy (unpack)
 import System.Environment
-
 
 main =do
 	lArgs <- getArgs
 	result <-parseFromFile netlistParser . (!!0) $ lArgs
-	myEdges <-parseFromFile solutionParser . (!!1) $ lArgs
-	case (result,myEdges)  of
-		(Right b,Right myE) -> do
-				let sg = computeTransitionByCircuit . addIntermediateVariables $b in	
+	case result  of
+		Left a -> undefined
+		Right b -> do
+				let sg = computeTransitionByCircuit . addIntermediateVariables $ b in	
 					let  csg = convertGraph sg in
-					do
-						putStrLn . unpack . renderDot . toDot .graphToDot nonClusteredParams $ ((mkGraph (labNodes csg) .fmap (\(x,y) -> (vertexOf csg x, vertexOf csg y,"")) $ myE) :: Gr String String)	
-		_-> putStrLn "You should go to hell. Two times."
+					do	
+						putStrLn $ variablesSat csg
+						putStrLn . show . pretty . printSatFormulas (normalize outputPersistency) $ csg
+
+
