@@ -1,6 +1,6 @@
 {-# LANGUAGE TupleSections#-}
 
---module Logic where
+module Logic where
 
 import Control.Monad
 import Control.Exception (assert)
