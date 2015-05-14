@@ -25,7 +25,7 @@ import AST
 import Checking
 import Parser
 import FOL
-import StateGeneration
+import qualified StateGeneration as SG
 
 import Data.Graph.Inductive.Graph 
 import Data.Graph.Inductive.Example
@@ -51,32 +51,33 @@ slabEdges = sortBy edgeComp . labEdges
 included:: (Eq a,Eq b,Graph gr) => gr a b -> gr a b -> Bool
 included g g' = slabNodes g == slabNodes g' && intersect (slabEdges g) (slabEdges g') == slabEdges g
 
-
 subIsomorphisms g1 g2 = 
-	foldr 
-	(\f acc -> \l -> f l >>= acc)
-	(\l -> guard (isIso g2 $ l) >> return (fmap (fromJust.lab g2) $ l))
-	. reverse . snd . foldl 	 
+	foldl
+	(\acc f -> \l -> f l >>= acc)
+	(\l -> guard (isIso g2 $reverse l) >> return (fmap (fromJust.lab g2) $reverse l))
+	. snd . foldl 	 
 		(\(prev,sol) new-> (\x -> (new:prev,x)) . (:sol) $ (\x -> do
-				 	y <- choice g2 prev new 0 x \\ x 
+				 	y <- choice g2 prev new 0 x -- \\ x --Small things to fix 
 					return $ y:x)  
 		)
 		([],[])
 		 $ nodes g1--Here I need an improvment 
-	where
+	where --Optimization : most of the time, all the element of l are distinct -> do a special case
 		choice g2 [] new n = (\x -> nodes g2) --Eta expansion not needed, test of style
 		choice g2 (t:q) new n = (\x -> if elem new $ pre g1 t
 					then pre g2 . (x!!) $ n --not sure
 					else if elem new $ suc g1 t 
 						then suc g2 . (x!!) $ n 
 						else choice g2 q new (1+n) x)
-		isIso g l =included g1' $ mkGraph --everything is here
-				(fmap (\x -> (renameBy x l,())) l)
-				(fmap (\(x,y,z) -> (renameBy x l,renameBy y l ,())) 
+		isIso g l = included (g1' l) $ mkGraph --everything is here
+				(nub $ fmap (\x -> (renameBy x l,())) l) --HEre todo fix
+				(nub.fmap (\(x,y,z) -> (renameBy x l,renameBy y l ,())) 
 				. catMaybes . fmap (extractEdges l) 
 				$ labEdges g) 
-		renameBy x = (+1) . fromJust . elemIndex x
-		g1' = emap (\x->()) $ nmap (\x -> ()) g1
+		renameBy x = (+1) . fromJust . elemIndex x --I need to add the edges possibly removed!
+--HEre everything is messed up, because if I have two times the same vertex, I need to do something.
+		g1' l = (mkGraph (nub . fmap (\x->(renameBy (l!!(x-1)) l,())) $ nodes g1)
+				 (nub.fmap (\(x,y)-> (renameBy (l!!(x-1)) l,renameBy (l!!(y-1)) l,())) $ edges g1) :: Gr () ())  
 		extractEdges l (x,y,z) = if elem x l && elem y l then Just (x,y,z) else Nothing 
 
 type Isomorphism = Map.Map Term Term
@@ -84,8 +85,11 @@ type Isomorphisms = [Isomorphism]
 
 --satifyF :: Isomorphisms -> INF -> INF
 satifyF g iso clause =
-	foldl (\acc i->(++) acc $ fmap 
-					(\(IClause a b) -> IClause (satifyCN g i a) (satifyCP g i b))
+	foldl (\acc i->(++) acc . catMaybes $ fmap 
+					(\(IClause a b) ->
+							case satifyCP g i b of
+								Nothing -> Nothing
+								Just l ->  Just $ IClause (fromMaybe [] $ satifyCN g i a) (l))
 					 clause )
 		[]	
 		iso 
@@ -101,7 +105,7 @@ substitue i (Atom s l) =
 
 --simplify :: [ Atom () ] -> [ Atom () ]
 --This is not ocrrect because of the Eq proposition TODO
-simplify g x =fromMaybe [] . foldl 
+simplify g x = foldl 
 		(\acc (Atom s l) -> case acc of
 					Nothing -> Nothing
 					Just j -> if s=="Eq" 
@@ -141,7 +145,7 @@ printSatFormulas normalized@(t:q) stateGraph =
 intF [] = 0
 intF (t:q) = if t then 2* intF q +1 else 2 * intF q 
 
-convertGraph :: StateGraph -> Gr String String
+convertGraph :: SG.StateGraph -> Gr String String
 convertGraph sg = --It is not fully built by lazyness,
 	mkGraph v e  --BIG IMPROVEMENT HERE TODO
 	where 	(v,e) = Map.foldWithKey
@@ -155,7 +159,7 @@ convertGraph sg = --It is not fully built by lazyness,
 				 accE)
 			)
 			([],[])
-			$ StateGeneration.edges sg  
+			$ SG.edges sg  
 		binary = fmap (\f->if f then '1' else '0')	
 
 
@@ -206,6 +210,8 @@ possibleEdges g ((Atom s l):q) t =
 
 -- The followign function was a good exercice but useless and actually false for the purpose. 
 -- It is dead code for the outputPersistency.
+-- TODO actually this is the solution to skolemisation I believe.
+-- But not to independent vertex.
 addVertex b [] g = return g
 addVertex c (t:q) g = (\x-> if x==[] then addVertex c q g else x) $
 		do
@@ -224,6 +230,19 @@ outputPersistency = forall $ \sommet ->
 	((forall $ \completeDiagram -> 
 	atom "E" [voisin1,completeDiagram] `impl`
 	atom "E" [voisin2,completeDiagram]))))))
+
+
+-- Two constants propreties, easy to express without this logic stuff
+
+bigOrPre g noeud = foldl (\acc t -> atom "E" [Var .fromJust. lab g $ t, Var . fromJust . lab g $ noeud] `FOL.or` acc) ff $ pre g noeud
+bigOrSuc g noeud = foldl (\acc t -> atom "E" [Var .fromJust. lab g $ noeud, Var . fromJust . lab g $ t] `FOL.or` acc) ff $ suc g noeud
+
+living g =  normalize . foldl (\acc noeud ->acc `FOL.and` 
+				(bigOrPre g noeud  `impl` bigOrSuc g noeud ) `FOL.and`
+				(bigOrSuc g noeud  `impl` bigOrPre g noeud )) tt $ nodes g   
+
+
+everyoneActive g = undefined  
 
 --For Minisat+
 variablesSat :: Gr String String -> String

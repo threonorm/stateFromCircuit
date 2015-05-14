@@ -14,7 +14,7 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Data.Tuple (swap)
 import qualified Debug.Trace as D
-
+import Data.Text.Lazy (pack)
 import Text.Parsec 
 import Text.Parsec.String
 import Text.Parsec.Expr
@@ -47,5 +47,5 @@ main =do
 				let sg = computeTransitionByCircuit . addIntermediateVariables $b in	
 					let  csg = convertGraph sg in
 					do
-						putStrLn . unpack . renderDot . toDot .graphToDot nonClusteredParams $ ((mkGraph (labNodes csg) .fmap (\(x,y) -> (vertexOf csg x, vertexOf csg y,"")) $ myE) :: Gr String String)	
+						putStrLn . unpack . renderDot . toDot .graphToDot nonClusteredParams {fmtNode = \(_,x)-> [textLabel $ pack x] } $ ((mkGraph (labNodes csg) .fmap (\(x,y) -> (vertexOf csg x, vertexOf csg y,"")) $ myE) :: Gr String String)	
 		_-> putStrLn "You should go to hell. Two times."

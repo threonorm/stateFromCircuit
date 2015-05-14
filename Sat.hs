@@ -40,8 +40,10 @@ main =do
 		Right b -> do
 				let sg = computeTransitionByCircuit . addIntermediateVariables $ b in	
 					let  csg = convertGraph sg in
-					do	
+					do
+--						putStrLn . prettify $ csg	
+--						putStrLn . show . allIsomorphisms (normalize outputPersistency) $ csg 
 						putStrLn $ variablesSat csg
 						putStrLn . show . pretty . printSatFormulas (normalize outputPersistency) $ csg
-
+						putStrLn . show . pretty . living $ csg 
 
