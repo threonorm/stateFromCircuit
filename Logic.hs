@@ -51,18 +51,13 @@ slabEdges = sortBy edgeComp . labEdges
 included:: (Eq a,Eq b,Graph gr) => gr a b -> gr a b -> Bool
 included g g' = slabNodes g == slabNodes g' && intersect (slabEdges g) (slabEdges g') == slabEdges g
 
-subIsomorphisms g1 g2 = 
-	foldl
+subIsomorphisms g1 g2 = foldl
 	(\acc f -> \l -> f l >>= acc)
 	(\l -> guard (isIso g2 $reverse l) >> return (fmap (fromJust.lab g2) $reverse l))
-	. snd . foldl 	 
-		(\(prev,sol) new-> (\x -> (new:prev,x)) . (:sol) $ (\x -> do
-				 	y <- choice g2 prev new 0 x -- \\ x --Small things to fix 
-					return $ y:x)  
-		)
-		([],[])
-		 $ nodes g1--Here I need an improvment 
-	where --Optimization : most of the time, all the element of l are distinct -> do a special case
+	. snd . foldl (\(prev,sol) new-> (\x -> (new:prev,x)) . (:sol) $ (\x -> do
+				 	y <- choice g2 prev new 0 x 
+					return $ y:x)) ([],[]) $ nodes g1
+	where 
 		choice g2 [] new n = (\x -> nodes g2) --Eta expansion not needed, test of style
 		choice g2 (t:q) new n = (\x -> if elem new $ pre g1 t
 					then pre g2 . (x!!) $ n --not sure
@@ -75,7 +70,6 @@ subIsomorphisms g1 g2 =
 				. catMaybes . fmap (extractEdges l) 
 				$ labEdges g) 
 		renameBy x = (+1) . fromJust . elemIndex x --I need to add the edges possibly removed!
---HEre everything is messed up, because if I have two times the same vertex, I need to do something.
 		g1' l = (mkGraph (nub . fmap (\x->(renameBy (l!!(x-1)) l,())) $ nodes g1)
 				 (nub.fmap (\(x,y)-> (renameBy (l!!(x-1)) l,renameBy (l!!(y-1)) l,())) $ edges g1) :: Gr () ())  
 		extractEdges l (x,y,z) = if elem x l && elem y l then Just (x,y,z) else Nothing 
@@ -246,7 +240,7 @@ everyoneActive g = undefined
 
 --For Minisat+
 variablesSat :: Gr String String -> String
-variablesSat sg = (++";") . ("min: -1*" ++) . intercalate " -1*" . fmap (\(x,y)->
+variablesSat sg =  ("Maximize\n\t+1*" ++) . intercalate " +1*" . fmap (\(x,y)->
 					(\(a,b)->"E"++a++b).(\(a,b)->(fromJust a, fromJust b)) $(lab sg x ,lab sg y))
 				$ Data.Graph.Inductive.Graph.edges sg
 

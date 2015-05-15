@@ -44,6 +44,12 @@ main =do
 --						putStrLn . prettify $ csg	
 --						putStrLn . show . allIsomorphisms (normalize outputPersistency) $ csg 
 						putStrLn $ variablesSat csg
+						putStrLn $ "Subject to"
 						putStrLn . show . pretty . printSatFormulas (normalize outputPersistency) $ csg
 						putStrLn . show . pretty . living $ csg 
-
+						putStrLn $ "Binary"
+						putStrLn .("\t"++). intercalate " " . fmap 
+							(\(x,y)-> (\(a,b)->"E"++a++b).(\(a,b)->(fromJust a, fromJust b))
+									$(lab csg x ,lab csg y))
+							 $ Data.Graph.Inductive.Graph.edges csg
+						putStrLn $ "End"
