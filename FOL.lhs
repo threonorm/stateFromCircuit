@@ -1073,7 +1073,7 @@ instance Pretty IClause where
                            ( sepBy "" $ fmap (\x -> text " + " <> x) $ fmap  pretty $ q)
 
 instance Pretty INF where --Here a disguting hack is hiding
-    pretty formula = vcat . fmap (\x->text "\t"<>x<>text " >= "<> (text .show . (1-). length . filter ('-'==) . render $ x) <> semi) $ fmap pretty $ formula
+    pretty formula = vcat . fmap (\x->text "\t"<>x<>text " >= "<> (text .show . (1-). length . filter ('-'==) . render $ x)) $ fmap pretty $ formula
 
 
 instance Pretty Term where
