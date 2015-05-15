@@ -240,7 +240,7 @@ everyoneActive g = undefined
 
 --For Minisat+
 variablesSat :: Gr String String -> String
-variablesSat sg =  ("Maximize\n\t+1*" ++) . intercalate " +1*" . fmap (\(x,y)->
+variablesSat sg =  ("Maximize\n\t " ++) . intercalate " + " . fmap (\(x,y)->
 					(\(a,b)->"E"++a++b).(\(a,b)->(fromJust a, fromJust b)) $(lab sg x ,lab sg y))
 				$ Data.Graph.Inductive.Graph.edges sg
 

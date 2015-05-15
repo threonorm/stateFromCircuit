@@ -1068,9 +1068,9 @@ instance Pretty CNF where
 
 
 instance Pretty IClause where
-    pretty (IClause p q) = (sepBy ""$ fmap (\x ->text " -1*" <>x) $ fmap pretty $ p)
+    pretty (IClause p q) = (sepBy ""$ fmap (\x ->text " - " <>x) $ fmap pretty $ p)
                            <+>
-                           ( sepBy "" $ fmap (\x -> text " +1*" <> x) $ fmap  pretty $ q)
+                           ( sepBy "" $ fmap (\x -> text " + " <> x) $ fmap  pretty $ q)
 
 instance Pretty INF where --Here a disguting hack is hiding
     pretty formula = vcat . fmap (\x->text "\t"<>x<>text " >="<> (text .show . (1-). length . filter ('-'==) . render $ x) <> semi) $ fmap pretty $ formula
