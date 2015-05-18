@@ -47,9 +47,15 @@ main =do
 						putStrLn $ "Subject to"
 						putStrLn . show . pretty . printSatFormulas (normalize outputPersistency) $ csg
 						putStrLn . show . pretty . living $ csg 
+						putStrLn . show . pretty . defineReachable $ csg 
+						putStrLn . show . pretty . propagateSignals csg . length .c_inputs $ b      
 						putStrLn $ "Binary"
 						putStrLn .("\t"++). intercalate " " . fmap 
 							(\(x,y)-> (\(a,b)->"E"++a++b).(\(a,b)->(fromJust a, fromJust b))
 									$(lab csg x ,lab csg y))
 							 $ Data.Graph.Inductive.Graph.edges csg
+						putStrLn .("\t"++). intercalate " " . fmap 
+							(\(x)-> (\(a)->"S"++a).fromJust
+									$(lab csg x))
+							 $ Data.Graph.Inductive.Graph.nodes csg	
 						putStrLn $ "End"

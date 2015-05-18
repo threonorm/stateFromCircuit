@@ -236,6 +236,21 @@ living g =  normalize . foldl (\acc noeud ->acc `FOL.and`
 				(bigOrSuc g noeud  `impl` bigOrPre g noeud )) tt $ nodes g   
 
 
+defineReachable g = normalize . foldl (\acc noeud ->acc `FOL.and` 
+				(atom "S" [Var . fromJust. lab g $ noeud]  `impl` bigOrPre g noeud ) `FOL.and`
+				(bigOrPre g noeud  `impl` atom "S" [Var . fromJust . lab g$ noeud ])) tt $ nodes g   
+
+bigAndSucOut g noeud n = foldl (\acc t -> --Off by one error possible todo
+				if (>= n) . fromJust . findIndex (\(x,y)-> x /=y )$ (fromJust . lab g $ t) `zip` (fromJust.lab g $ noeud) 
+					then atom "E" [Var .fromJust. lab g $ noeud, Var  . fromJust . lab g $ t] `FOL.and` acc
+					else acc) tt $ suc g noeud
+
+
+propagateSignals g nbInputs = normalize . foldl (\acc noeud ->acc `FOL.and` 
+				(atom "S" [Var . fromJust. lab g $ noeud]  `impl` bigAndSucOut g noeud nbInputs ) 
+				) tt $ nodes g   
+
+
 everyoneActive g = undefined  
 
 --For Minisat+
