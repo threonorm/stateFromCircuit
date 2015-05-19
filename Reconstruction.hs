@@ -47,7 +47,7 @@ main =do
 				let sg = computeTransitionByCircuit . addIntermediateVariables $b in	
 					let  csg = convertGraph sg in
 					do
-						putStrLn . unpack . renderDot . toDot .graphToDot nonClusteredParams {fmtNode = \(_,x)-> [textLabel $ pack x] ,fmtEdge = \(x,y,z) -> [textLabel $ pack z]} $ ((addLabels ((fmap (\x->(x,undefined)) $c_inputs b) ++c_eqs b) $ mkGraph (labNodes csg) .fmap (\(x,y) -> (vertexOf csg x, vertexOf csg y,"")) $ myE) :: Gr String String)	
+						putStrLn . unpack . renderDot . toDot .graphToDot nonClusteredParams {fmtNode = \(_,x)-> [textLabel $ pack x] ,fmtEdge = \(x,y,z) -> [textLabel $ pack z]} $ ((addLabels ((fmap (\x->(x,undefined)) $c_inputs b\\ c_outputs b) ++c_eqs b) $ mkGraph (labNodes csg) .fmap (\(x,y) -> (vertexOf csg x, vertexOf csg y,"")) $ myE) :: Gr String String)	
 		_-> putStrLn "You should go to hell. Two times."
 
 
