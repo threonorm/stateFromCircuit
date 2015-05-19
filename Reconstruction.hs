@@ -47,5 +47,10 @@ main =do
 				let sg = computeTransitionByCircuit . addIntermediateVariables $b in	
 					let  csg = convertGraph sg in
 					do
-						putStrLn . unpack . renderDot . toDot .graphToDot nonClusteredParams {fmtNode = \(_,x)-> [textLabel $ pack x] } $ ((mkGraph (labNodes csg) .fmap (\(x,y) -> (vertexOf csg x, vertexOf csg y,"")) $ myE) :: Gr String String)	
+						putStrLn . unpack . renderDot . toDot .graphToDot nonClusteredParams {fmtNode = \(_,x)-> [textLabel $ pack x] ,fmtEdge = \(x,y,z) -> [textLabel $ pack z]} $ ((addLabels (c_eqs b) $ mkGraph (labNodes csg) .fmap (\(x,y) -> (vertexOf csg x, vertexOf csg y,"")) $ myE) :: Gr String String)	
 		_-> putStrLn "You should go to hell. Two times."
+
+
+addLabels l g = gmap (\(l1,node,index,l2)->(fmap (\(_,before)->(edgeLabel l g before node,before)) l1,node,index,fmap (\(_,after)->(edgeLabel l g node after,after)) l2)) g   
+
+edgeLabel l g a b =  fst . (l !!). fromJust . findIndex (\(x,y)-> x /=y )$ (fromJust . lab g $ a) `zip` (fromJust.lab g $ b) 
