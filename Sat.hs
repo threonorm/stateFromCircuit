@@ -50,6 +50,7 @@ main =do
 						putStrLn . show . pretty . living $ csg 
 						putStrLn . show . pretty . defineReachable $ csg 
 					      	putStrLn . show . pretty . propagateSignals csg . fromIntegral .n_inputs $ sg      
+						putStrLn . show . pretty . mutually $ csg
 						putStrLn $ "Binary"
 						putStrLn .("\t"++). intercalate " " . fmap 
 							(\(x,y)-> (\(a,b)->"E"++a++b).(\(a,b)->(fromJust a, fromJust b))
