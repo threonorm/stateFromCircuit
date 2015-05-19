@@ -49,8 +49,7 @@ main =do
 						putStrLn . show . pretty . printSatFormulas (normalize outputPersistency) $ csg
 						putStrLn . show . pretty . living $ csg 
 						putStrLn . show . pretty . defineReachable $ csg 
-						putStrLn$"ICI"
-					      	putStrLn . show . pretty . propagateSignals csg . length .c_inputs $ b      
+					      	putStrLn . show . pretty . propagateSignals csg . fromIntegral .n_inputs $ sg      
 						putStrLn $ "Binary"
 						putStrLn .("\t"++). intercalate " " . fmap 
 							(\(x,y)-> (\(a,b)->"E"++a++b).(\(a,b)->(fromJust a, fromJust b))
