@@ -33,6 +33,8 @@ import Data.GraphViz.Printing hiding (char)
 import Data.Graph.Inductive.Graph 
 import Data.Graph.Inductive.Example
 import Data.Graph.Inductive.PatriciaTree
+import qualified Data.Graph.Inductive.Query.DFS as DFS
+import GHC.Exts (sortWith)
 
 import Data.Text.Lazy (unpack)
 import System.Environment
@@ -46,8 +48,19 @@ main =do
 		(Right b,Right myE) -> do
 				let sg = computeTransitionByCircuit . addIntermediateVariables $b in	
 					let  csg = convertGraph sg in
+					let graph = ((mkGraph (labNodes csg) .fmap 
+							(\(x,y) -> (vertexOf csg x, vertexOf csg y,""))
+							$ myE) :: Gr String String) in	
+					let compo = last . sortWith length . DFS.scc $ graph in
 					do
-						putStrLn . unpack . renderDot . toDot .graphToDot nonClusteredParams {fmtNode = \(_,x)-> [textLabel $ pack x] ,fmtEdge = \(x,y,z) -> [textLabel $ pack z]} $ ((addLabels ((fmap (\x->(x,undefined)) $c_inputs b\\ c_outputs b) ++c_eqs b) $ mkGraph (labNodes csg) .fmap (\(x,y) -> (vertexOf csg x, vertexOf csg y,"")) $ myE) :: Gr String String)	
+						putStrLn . unpack . renderDot . toDot .graphToDot nonClusteredParams 
+								{fmtNode = \(_,x)-> [textLabel $ pack x] ,
+								fmtEdge = \(_,_,z) -> [textLabel $ pack z]}
+								. addLabels 
+									((fmap (\x->(x,undefined)) $c_inputs b\\ c_outputs b)
+									 ++c_eqs b
+									)
+						 		$ delNodes (nodes graph \\ compo) graph 
 		_-> putStrLn "You should go to hell. Two times."
 
 
