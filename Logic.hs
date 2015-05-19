@@ -251,7 +251,7 @@ propagateSignals g nbInputs = normalize . foldl (\acc noeud ->acc `FOL.and`
 				) tt $ nodes g   
 
 
-mutuallyExclusive s1 s2 = (e1 `FOL.or` e2) `FOL.and` (FOL.not (e1 `FOL.and` e2))
+mutuallyExclusive s1 s2 = (FOL.not (e1 `FOL.and` e2))
 		where 	e1 = atom "E" [ Var $ s1, Var $ s2 ] 
 			e2 = atom "E" [ Var $ s2, Var $ s1 ] 
 
