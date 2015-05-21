@@ -84,9 +84,12 @@ satifyF g iso clause =
 							case satifyCP g i b of
 								Nothing -> Nothing
 								Just l ->  Just $ IClause (fromMaybe [] $ satifyCN g i a) (l))
-					 clause )
+					 . removeIncorrect $ clause )
 		[]	
 		iso 
+
+--Hacky but necessary, until I do a proper isomorphism function
+removeIncorrect :: INF -> INF
 
 satifyCP g i l =simplify g. fmap (substitue i)$ l
 
