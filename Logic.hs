@@ -79,15 +79,35 @@ type Isomorphisms = [Isomorphism]
 
 --satifyF :: Isomorphisms -> INF -> INF
 satifyF g iso clause =
-	foldl (\acc i->(++) acc . catMaybes $ fmap 
-					(\(IClause a b) ->
+	catMaybes . fmap removeWrong $ foldl (\acc i->(++) acc . catMaybes $ fmap 
+					(\(IClause a b) -> 
 							case satifyCP g i b of
 								Nothing -> Nothing
 								Just l ->  Just $ IClause (fromMaybe [] $ satifyCN g i a) (l))
-					 clause )
+					 $ clause )
 		[]	
 		iso 
 
+removeWrong clause = case clause of --we are asking to strong persistency so we relax. 
+	IClause ((Atom _ (Var s1:Var s1':_)):(Atom _ (Var s2:Var s2':_)):(Atom _ (Var s3:Var s3':_)):[]) (Atom s ((Var s4:Var s4':[]))  ->  
+			let	p1 = event s1 s1' in		
+				let	p2 = event s2 s2' in	
+					let	p3 = event s3 s3' in	
+						let	p4 = event s4 s4' in	
+				if (p1 == p4 && p2 == p3 && s1!!p1 == s4!!p1 && s2!!p2 == s3 !!p2)
+					then Just clause
+					else Nothing 
+	IClause ((Atom _ (Var s1:Var s1':_)):(Atom _ (Var s2:Var s2':_)):(Atom _ (Var s3:Var s3':_)):[]) (Atom s [])  -> 
+		let 	p1 = event s1 s1' in
+			let	p2 = event s2 s2' in
+				let	p3 = event s3 s3' in
+			if (p2 == p3 && s2!!p2 == s3 !!p2)
+				then Just clause
+				else Nothing 
+_ -> Just clause
+
+event a b = fromJust . findIndex (\(x,y)-> x /=y )$ a `zip` b
+  
 satifyCP g i l =simplify g. fmap (substitue i)$ l
 
 satifyCN g i l= simplify g. fmap (substitue i) $l
