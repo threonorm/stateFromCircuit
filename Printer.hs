@@ -41,11 +41,11 @@ import System.Environment
 
 
 outputCircuitGraph circuit graph =
-	".inputs " ++ concat (intersperse " " (fc_inputs circuit)) ++   
-	"\n.outputs " ++ concat (intersperse " " (fc_outputs circuit)) ++
-	"\n.internal " ++ concat (intersperse " " (fc_intermediate circuit)) ++
-	"\n.state graph\n" ++ concat (fmap (\(x,y,l) -> (fromJust . lab graph $ x) ++ l 
-					++(fromJust.lab graph $ y) ++ "\n"  ) $ labEdges graph ) ++
+	".inputs " ++ concat (intersperse " " (fmap ("S" ++) $fc_inputs circuit)) ++   
+	"\n.outputs " ++ concat (intersperse " " (fmap ("S" ++) $fc_outputs circuit)) ++
+	"\n.internal " ++ concat (intersperse " " (fmap ("S" ++) $fc_intermediate circuit)) ++
+	"\n.state graph\n" ++ concat (fmap (\(x,y,l) -> (fmap ("S" ++) $ . fromJust . lab graph $ x) ++ l 
+					++(fmap ("S" ++) . fromJust.lab graph $ y) ++ "\n"  ) $ labEdges graph ) ++
 	".marking {" ++ (take (fromIntegral $n) $  repeat '0') ++ "}\n.end"
 	where n= length $ fc_inputs circuit ++ fc_outputs circuit ++ fc_intermediate circuit
 
