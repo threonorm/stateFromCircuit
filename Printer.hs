@@ -38,7 +38,7 @@ import Data.Text.Lazy (unpack)
 import System.Environment
 
 
-sign x y =  (\a b ->if x!!b == '1' then "-" else "+" ) x . fromJust .findIndex (\(x,y)-> x/=y ) $ x `zip` y
+sign x y =  (\a b ->if x!!b == '1' then "-" else "+" ) x . fromJust . findIndex (\(x,y)-> x/=y ) $ x `zip` y
 
 outputCircuitGraph circuit graph =
 	".inputs " ++ concat (intersperse " " (fmap ("S" ++) $fc_inputs circuit)) ++   
