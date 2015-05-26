@@ -92,7 +92,7 @@ removeWrong n clause = case clause of --this will do nothing for the last output
 	IClause ((Atom _ (Var s1:Var s1':_)):(Atom _ (Var s2:Var s2':_)):[]) (_)  ->  
 			let	p1 = event s1 s1' in		
 			let	p2 = event s2 s2' in	
-			D.trace "Youhou" $ if (p1>=n || p2>= n )
+			if (p1>=n || p2>= n )
 					then Just clause
 					else Nothing 
 	_ -> Just clause
