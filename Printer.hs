@@ -42,8 +42,8 @@ sign x y =  (\a b ->if x!!b == '1' then "-" else "+" ) x . fromJust . findIndex 
 
 outputCircuitGraph circuit graph =
 	".inputs " ++ concat (intersperse " " (fc_inputs circuit)) ++   
-	"\n.outputs " ++ concat (intersperse " " (fc_outputs circuit)) ++
-	"\n.internal " ++ concat (intersperse " " (fc_intermediate circuit)) ++
+	"\n.outputs " ++ concat (intersperse " " (filter (\x-> take 3 x /= "csc" ) $ fc_outputs circuit)) ++
+	"\n.internal " ++ concat (intersperse " " (fc_intermediate circuit ++ (filter (\x-> take 3 x == "csc") . fc_outputs $ circuit) )) ++
 	"\n.state graph\n" ++ concat (fmap (\(x,y,l) -> (("S" ++)  . fromJust . lab graph $ x) ++ " " ++ l ++ sign (fromJust . lab graph $ x) (fromJust . lab graph $ y) 
 					++( (" S" ++) . fromJust.lab graph $ y) ++ "\n"  ) $ labEdges graph ) ++
 	".marking {S" ++ stableV graph circuit ++ "}\n.end"
