@@ -47,9 +47,9 @@ outputCircuitGraph circuit graph =
 	"\n.state graph\n" ++ concat (fmap (\(x,y,l) -> (("S" ++)  . fromJust . lab graph $ x) ++ " " ++ l ++ sign (fromJust . lab graph $ x) (fromJust . lab graph $ y) 
 					++( (" S" ++) . fromJust.lab graph $ y) ++ "\n"  ) $ labEdges graph ) ++
 	".marking {S" ++ stableV graph circuit ++ "}\n.end"
-	where 	n= length $ fc_inputs circuit 
+	where 	nl= length $ fc_inputs circuit 
 		stableV graph circuit =head $ foldl (\acc (n,l) ->
-					if take n l == replicate n '0' && ((==[]).catMaybes . fmap (\(_,_,l2)-> if l2 `elem` (fc_inputs circuit)
+					if take n l == replicate nl '0' && ((==[]).catMaybes . fmap (\(_,_,l2)-> if l2 `elem` (fc_inputs circuit)
 												then Nothing
 												else Just l) $ out graph n ) 
 						then l:acc
