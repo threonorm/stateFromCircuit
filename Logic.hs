@@ -109,7 +109,7 @@ substitue g i (Atom s l) = --adaptation for persistency for this existing quanti
 
 existRemover g s1 s2 s3 =
 	case s3 of
-		Var s -> Var $ take (transition - 1) s ++ (\x->if x=='0' then "1" else "0") (s!!transition)  ++ drop transition s   
+		Var s -> Var $ take (transition ) s ++ (\x->if x=='0' then "1" else "0") (s!!transition)  ++ drop (transition+1) s   
 		_ -> undefined
 	where 	transition =   fromJust . findIndex (\(x,y)-> x /=y ) $ (show s1) `zip` (show s2) 
 
