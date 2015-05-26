@@ -78,8 +78,8 @@ type Isomorphism = Map.Map Term Term
 type Isomorphisms = [Isomorphism]
 
 --satifyF :: Isomorphisms -> INF -> INF
-satifyF g iso clause =
-	catMaybes . fmap removeWrong $ foldl (\acc i->(++) acc . catMaybes $ fmap 
+satifyF g iso clause n =
+	catMaybes . fmap (removeWrong n)$ foldl (\acc i->(++) acc . catMaybes $ fmap 
 					(\(IClause a b) -> 
 							case satifyCP g i b of
 								Nothing -> Nothing
@@ -88,20 +88,18 @@ satifyF g iso clause =
 		[]	
 		iso 
 
-removeWrong clause = case clause of --this will do nothing for the last output persistency 
-	IClause ((Atom _ (Var s1:Var s1':_)):(Atom _ (Var s2:Var s2':_)):(Atom _ (Var s3:Var s3':_)):[]) ([Atom s ((Var s4:Var s4':[]))])  ->  
+removeWrong n clause = case clause of --this will do nothing for the last output persistency 
+	IClause ((Atom _ (Var s1:Var s1':_)):(Atom _ (Var s2:Var s2':_)):[]) ([Atom s ((Var s4:Var s4':[]))])  ->  
 			let	p1 = event s1 s1' in		
 			let	p2 = event s2 s2' in	
-			let	p3 = event s3 s3' in	
 			let	p4 = event s4 s4' in
-			if (p1 == p2 && p4 == p3  && s1!!p1 == s2!!p1 && s4!!p3 == s3 !!p3)
+			if (p1>=n || p2>= n )
 					then Just clause
 					else Nothing 
-	IClause ((Atom _ (Var s1:Var s1':_)):(Atom _ (Var s2:Var s2':_)):(Atom _ (Var s3:Var s3':_)):[]) []  -> 
+	IClause ((Atom _ (Var s1:Var s1':_)):(Atom _ (Var s2:Var s2':_)):[]) []  -> 
 		let 	p1 = event s1 s1' in
 		let	p2 = event s2 s2' in
-		let	p3 = event s3 s3' in
-		if (p2 == p1 && s2!!p2 == s1 !!p2)
+		if (p1>=n || p2 >= n)
 				then Just clause
 				else Nothing 
 	_ -> Just clause
@@ -160,10 +158,10 @@ allIsomorphisms formula stateGraph =
 				 $ subIsomorphisms pattern stateGraph []
 		patterns = extractPattern formula 
 
-printSatFormulas [] stateGraph = []
-printSatFormulas normalized@(t:q) stateGraph = 
-	satifyF stateGraph (concat $ allIsomorphisms normalized stateGraph) normalized
-	++ ( printSatFormulas q stateGraph)
+printSatFormulas [] stateGraph n = []
+printSatFormulas normalized@(t:q) stateGraph n = 
+	satifyF stateGraph (concat $ allIsomorphisms normalized stateGraph) normalized n
+	++ ( printSatFormulas q stateGraph n )
 
 intF [] = 0
 intF (t:q) = if t then 2* intF q +1 else 2 * intF q 
