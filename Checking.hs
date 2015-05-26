@@ -27,7 +27,7 @@ addIntermediateVariables circuit =
 	where 	
 		interm = ((nub . concat . map (extractVariables . snd) $ c_eqs circuit)
 			\\ (c_outputs circuit))
-			\\ (c_inputs circuit)
+			\\ (c_inputs circuit \\ c_outputs circuit)
 		extractVariables (Earg a) = [a]
 		extractVariables (Enot a) = extractVariables a
 		extractVariables (Ebinop _ a b) = extractVariables a
