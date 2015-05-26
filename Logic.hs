@@ -88,7 +88,7 @@ satifyF g iso clause =
 		[]	
 		iso 
 
-removeWrong clause = case clause of --we are asking to strong persistency so we relax. 
+removeWrong clause = case clause of --this will do nothing for the last output persistency 
 	IClause ((Atom _ (Var s1:Var s1':_)):(Atom _ (Var s2:Var s2':_)):(Atom _ (Var s3:Var s3':_)):[]) ([Atom s ((Var s4:Var s4':[]))])  ->  
 			let	p1 = event s1 s1' in		
 			let	p2 = event s2 s2' in	
@@ -108,13 +108,20 @@ removeWrong clause = case clause of --we are asking to strong persistency so we 
 
 event a b = fromJust . findIndex (\(x,y)-> x /=y )$ a `zip` b
   
-satifyCP g i l =simplify g. fmap (substitue i)$ l
+satifyCP g i l =simplify g. fmap (substitue g i)$ l
 
-satifyCN g i l= simplify g. fmap (substitue i) $l
+satifyCN g i l= simplify g. fmap (substitue g i) $l
 
-substitue :: Isomorphism -> Atom () -> Atom ()
-substitue i (Atom s l) =
-	Atom s ((fmap (\x -> i Map.! x) $ take 2 l)++drop 2 l) 
+--substitue :: Isomorphism -> Atom () -> Atom ()
+substitue g i (Atom s l) = --adaptation for persistency for this existing quantifier
+	Atom s ((fmap (\x -> if x == FOL.Const "Skol8" [Var "x4",Var "x2", Var "x1"] then existRemover g (i Map.! (Var "x1")) (i Map.! (Var "x2")) (i Map.! (Var "x4")) else i Map.! x) $ take 2 l)++drop 2 l) 
+
+existRemover g s1 s2 s3 =
+	case s3 of
+		Var s -> Var $ take (transition - 1) s ++ (\x->if x=='0' then "1" else "0") (s!!transition)  ++ drop transition s   
+		_ -> undefined
+	where 	transition =   fromJust . findIndex (\(x,y)-> x /=y ) $ (show s1) `zip` (show s2) 
+
 
 
 --simplify :: [ Atom () ] -> [ Atom () ]
@@ -133,19 +140,21 @@ simplify g x = foldl
 		$ x	
 	
 
-isIn l g = elem secondVertice $ suc g firstVertice 
+isIn l g = case lookup (l!!0) $ noeuds of
+	Nothing -> False
+	Just firstVertice -> case lookup (l!!1) $ noeuds of
+		Nothing -> False
+		Just secondVertice -> elem secondVertice $ suc g firstVertice 
 	where 	noeuds = catMaybes . fmap (\(x,y)-> if (Var x) `elem` l 
 			then Just (Var x,y)
 			else Nothing )
 			$ fmap swap dic
 		dic = labNodes g
-		firstVertice= fromJust . lookup (l!!0) $ noeuds
-		secondVertice = fromJust. lookup (l!!1) $ noeuds
 
 allIsomorphisms formula stateGraph = 
 	 [isomorphisms pattern | pattern <- patterns]		
 	where	isomorphisms pattern = fmap (\x -> Map.fromList . zip 
-						( fmap 	(FOL.Var . fromJust.lab pattern) 
+						( fmap 	(FOL.Var .fromJust.lab pattern) 
 							$ nodes pattern)
 						. fmap Var $ x)
 				 $ subIsomorphisms pattern stateGraph []
@@ -179,7 +188,7 @@ convertGraph sg = --It is not fully built by lazyness,
 
 extractPattern :: INF -> [Gr String String]    		
 extractPattern [] = [empty] -- NOW I BELIEVE this addVertex is bullshit	
-extractPattern arg1@((IClause a q):l) = addVertex q (nub $ extractVertex arg1) $ inductivelyBuild a
+extractPattern arg1@((IClause a q):l) = [inductivelyBuild a] --addVertex q (nub $ extractVertex arg1) $ inductivelyBuild a
 	where 	inductivelyBuild [] = empty
 		inductivelyBuild (Atom s ln:q) = 
 			let subGraph = inductivelyBuild q in
@@ -197,7 +206,7 @@ extractPattern arg1@((IClause a q):l) = addVertex q (nub $ extractVertex arg1) $
 									_ -> undefined) . fmap (\(x,y)->(y,x)) $ labNodes withNode ,
 						fromJust. lookup (case ln!!1 of
 									Var s -> s
-									_ -> undefined) . fmap (\(x,y)->(y,x)) $ labNodes withNode ,
+									_ ->  undefined) . fmap (\(x,y)->(y,x)) $ labNodes withNode ,
 							"")
 						withNode
 				else withNode
@@ -243,6 +252,17 @@ outputPersistency = forall $ \sommet ->
 	((FOL.not $ atom "Eq" [voisin1,voisin2]) `impl`
 	((forall $ \completeDiagram -> 
 	atom "E" [voisin1,completeDiagram] `impl`
+	atom "E" [voisin2,completeDiagram]))))))
+
+
+outputPersistency2 :: Formula Input
+outputPersistency2 = forall $ \sommet -> 
+	(forall $ \voisin1 -> (forall $ \voisin2 ->
+	atom "E" [sommet,voisin1] `impl`
+	(atom "E" [sommet,voisin2] `impl`
+	((FOL.not $ atom "Eq" [voisin1,voisin2]) `impl`
+	((exists $ \completeDiagram -> 
+	atom "E" [voisin1,completeDiagram] `FOL.and`
 	atom "E" [voisin2,completeDiagram]))))))
 
 

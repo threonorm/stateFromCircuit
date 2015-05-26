@@ -134,7 +134,7 @@ data Term  =  Const String [Term]
 
 instance Show Term where
 	show x = case x of
-		Const s l -> undefined 
+		Const s l -> "const"++ s++ show l 
 		Var s -> s
 \end{code}
 
