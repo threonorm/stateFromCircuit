@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+
+# This script transforms the output of genet into a format that
+# is readable by petrify as a specificiation of an asynchronous circuit
+#
+# The script receives two parameters: genet filename and async filename.
+# For example: genet2async file.gen file.stg
+
+import sys, os, re
+
+if len(sys.argv) != 3:
+    print >> sys.stderr, "Wrong number of arguments."
+    print >> sys.stderr, "Usage:", os.path.basename(sys.argv[0]), "<genet_file> <async_file>"
+    sys.exit (1)
+
+# List of signals
+inputs = []
+outputs = []
+internal = []
+
+# Open async file and get lists of signals 
+try:
+    f_async = open (sys.argv[2], 'r')
+except IOError:
+    print >>sys.stderr, "Cannot open file %s." %sys.argv[2]
+    sys.exit (1)
+
+text = f_async.readlines()
+f_async.close()
+
+for line in text:
+    words = line.split()
+    type = words[0]
+    if (type in [".dummy", ".channels", ".internal_channels", ".external_channels"]):
+       print >>sys.stderr, "%s not supported." %type
+       sys.exit(1)
+     
+    if type not in [".inputs", ".outputs", ".internal"]: continue
+    signals = []
+    for w in words[1:]:
+        if w[0] == '#': break
+        signals.append(w)
+
+    if type == ".inputs": inputs.extend(signals)
+    elif type == ".outputs": outputs.extend(signals)
+    else: internal.extend(signals)
+
+# Let us read the original file
+try:
+    f_genet = open (sys.argv[1], 'r')
+except IOError:
+    print >>sys.stderr, "Cannot open file %s." %sys.argv[2]
+    sys.exit (1)
+
+text = f_genet.readlines()
+f_genet.close()
+
+# Separate '(' and '#' in a new word
+
+for i in range(len(text)):
+  if text[i][0] == '#': continue
+  text[i] = text[i].replace("(", " (", 1)
+  text[i] = text[i].replace("#", " #", 1)
+
+matchObj = re.match( r'(.*) are (.*?) .*', line)
+for line in text:
+  words = line.split()
+  if words[0] == ".outputs":
+    if len(inputs) > 0: print ".inputs", " ".join(str(x) for x in inputs)
+    if len(outputs) > 0: print ".outputs", " ".join(str(x) for x in outputs)
+    if len(internal) > 0: print ".internal", " ".join(str(x) for x in internal)
+    continue
+
+  for i in range(len(words)): words[i] = re.sub(r'(_)(\d+)$', r'/\2', words[i])
+  print(" ".join(str(x) for x in words))
+
+sys.exit(0)
+
+
+
