@@ -184,8 +184,11 @@ removeWrong n clause = case clause of --this will do nothing for the last output
 			let	p1 = event s1 s1' in		
 			let	p2 = event s2 s2' in	
 			if (p1>=n || p2>= n )
-					then Just clause
-					else Nothing 
+					then if (s2'==s1) then Nothing 
+							else Just clause
+					else if (s2'==s1)
+						then Just clause 
+						else Nothing 
 	_ -> Just clause
 
 event a b = fromJust . findIndex (\(x,y)-> x /=y )$ a `zip` b
@@ -198,11 +201,16 @@ substitue g i (Atom s l) = --adaptation for persistency for this existing quanti
 	Atom s ((fmap (\x -> if x == FOL.Const "Skol8" [Var "x4",Var "x2", Var "x1"] then existRemover g (i Map.! (Var "x1")) (i Map.! (Var "x2")) (i Map.! (Var "x4")) else i Map.! x) $ take 2 l)++drop 2 l) 
 
 existRemover g s1 s2 s3 =
+	if (== 1) . length . filter (\(x,y) -> x/=y) $ (show s1) `zip` (show s3)  then 
 	case s3 of
 		Var s -> Var $ take (transition ) s ++ (\x->if x=='0' then "1" else "0") (s!!transition)  ++ drop (transition+1) s   
 		_ -> undefined
+	else
+	case s1 of
+		Var s ->  Var $ take transition2 s ++ (\x->if x=='0' then "1" else "0") (s!!transition2)  ++ drop (transition2+1) s   
+		_ -> undefined
 	where 	transition =   fromJust . findIndex (\(x,y)-> x /=y ) $ (show s1) `zip` (show s2) 
-
+		transition2 =   fromJust . findIndex (\(x,y)-> x /=y ) $ (show s2) `zip` (show s3) 
 
 
 --- Formulas in the model 
@@ -229,7 +237,7 @@ inputCannotInput = forall $ \sommet ->
 	(forall $ \voisin1 -> (forall $ \voisin2 ->
 	atom "E" [sommet,voisin1] `impl`
 	(atom "E" [voisin1, voisin2] `impl`
-	((forall $ \completeDiagram -> 
+	((exists $ \completeDiagram -> 
 	atom "E" [sommet,completeDiagram] `FOL.and`
 	atom "E" [completeDiagram,voisin2])))))
 
