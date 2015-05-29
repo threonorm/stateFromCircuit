@@ -169,8 +169,8 @@ isIn l g = case lookup (l!!0) $ noeuds of
 -----Case outputpersistency -----
 
 
-satifyF g iso clause n =
-	catMaybes . fmap (removeWrong n)$ foldl (\acc i->(++) acc . catMaybes $ fmap 
+satifyF g iso clause n n2 =
+	catMaybes . fmap (removeWrong n n2)$ foldl (\acc i->(++) acc . catMaybes $ fmap 
 					(\(IClause a b) -> 
 							case satifyCP g i b of
 								Nothing -> Nothing
@@ -179,16 +179,22 @@ satifyF g iso clause n =
 		[]	
 		iso 
 
-removeWrong n clause = case clause of --this will do nothing for the last output persistency 
+removeWrong n n2 clause = case clause of --this will do nothing for the last output persistency 
 	IClause ((Atom _ (Var s1:Var s1':_)):(Atom _ (Var s2:Var s2':_)):[]) (_)  ->  
 			let	p1 = event s1 s1' in		
 			let	p2 = event s2 s2' in	
-			if (p1>=n || p2>= n )
-					then if (s2'==s1) then Nothing 
-							else Just clause
-					else if (s2'==s1)
-						then Just clause 
-						else Nothing 
+			if (s2' == s1) then 
+				if (p1<n && p2 < n + n2 ) 
+					then
+						Just clause	
+					else	
+						Nothing
+			else
+				if (p1>=n || p2>= n ) 
+					then
+						Just clause	
+					else
+						Nothing
 	_ -> Just clause
 
 event a b = fromJust . findIndex (\(x,y)-> x /=y )$ a `zip` b
@@ -215,10 +221,10 @@ existRemover g s1 s2 s3 =
 
 --- Formulas in the model 
 
-printSatFormulas [] stateGraph n = []
-printSatFormulas normalized@(t:q) stateGraph n = 
-	satifyF stateGraph (concat $ allIsomorphisms normalized stateGraph) normalized n
-	++ ( printSatFormulas q stateGraph n )
+printSatFormulas [] stateGraph n n2= []
+printSatFormulas normalized@(t:q) stateGraph n n2 = 
+	satifyF stateGraph (concat $ allIsomorphisms normalized stateGraph) normalized n n2
+	++ ( printSatFormulas q stateGraph n n2)
 
 
 outputPersistency2 :: Formula Input

@@ -23,7 +23,7 @@ addIntermediateVariables circuit =
 	Fc ((c_inputs circuit) \\ (c_outputs circuit) )
 		(c_outputs circuit) 
 		(interm)
-		(c_eqs circuit) --USEFUL : put the output at the end  
+		$ (putAtTheEnd $ c_eqs circuit) --USEFUL : put the output at the end  
 	where 	
 		interm = ((nub . concat . map (extractVariables . snd) $ c_eqs circuit)
 			\\ (c_outputs circuit))
@@ -32,7 +32,7 @@ addIntermediateVariables circuit =
 		extractVariables (Enot a) = extractVariables a
 		extractVariables (Ebinop _ a b) = extractVariables a
 						++ extractVariables b
-
+		putAtTheEnd y =  (filter (\(x,_) -> take 3 x == "csc" ) y) ++  (filter (\(x,_) -> take 3 x /= "csc") y) 
 
 -- We need to check that every output is defined
 -- That nobody is defined two times

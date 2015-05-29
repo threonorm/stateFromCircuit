@@ -40,14 +40,17 @@ main =do
 		Right b -> do
 				let sg = computeTransitionByCircuit . addIntermediateVariables $ b in	
 					let  csg = convertGraph sg in
+					let nin = fromIntegral . n_inputs $ sg in  
+					let nout =  fromIntegral . n_outputs $ sg in 
+					let inte =  fromIntegral (n_v sg) - nin - nout in
 					do
 --						putStrLn . prettify $ csg	
 --						putStrLn . show . allIsomorphisms (normalize outputPersistency) $ csg 
 						putStrLn $ variablesSat csg
 						putStrLn $ "Subject to"
 						--putStrLn . show . pretty . normalize $ atom "S" [Var . take (fromIntegral $n_v sg) $  repeat '0' ] 	
-						putStrLn . show . pretty . printSatFormulas (normalize outputPersistency2) csg . fromIntegral . n_inputs $ sg 
-						putStrLn . show . pretty . printSatFormulas (normalize inputCannotInput) csg . fromIntegral . n_inputs $ sg 
+						putStrLn . show . pretty . printSatFormulas (normalize outputPersistency2) csg nin $ inte 
+						putStrLn . show . pretty . printSatFormulas (normalize inputCannotInput) csg nin $ inte  
 						putStrLn . show . pretty . living $ csg 
 						putStrLn . show . pretty . defineReachable $ csg 
 					      	putStrLn . show . pretty . propagateSignals csg . fromIntegral .n_inputs $ sg      
