@@ -50,7 +50,7 @@ main =do
 						putStrLn $ "Subject to"
 						--putStrLn . show . pretty . normalize $ atom "S" [Var . take (fromIntegral $n_v sg) $  repeat '0' ] 	
 						putStrLn . show . pretty . printSatFormulas (normalize outputPersistency2) csg nin $ inte 
-						putStrLn . show . pretty . printSatFormulas (normalize inputCannotInput) csg nin $ inte  
+						--putStrLn . show . pretty . printSatFormulas (normalize inputCannotInput) csg nin $ inte  
 						putStrLn . show . pretty . living $ csg 
 						putStrLn . show . pretty . defineReachable $ csg 
 					      	putStrLn . show . pretty . propagateSignals csg . fromIntegral .n_inputs $ sg      

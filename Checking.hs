@@ -33,6 +33,8 @@ addIntermediateVariables circuit =
 		extractVariables (Ebinop _ a b) = extractVariables a
 						++ extractVariables b
 		putAtTheEnd y =  (filter (\(x,_) -> take 3 x == "csc" ) y) ++  (filter (\(x,_) -> take 3 x /= "csc") y) 
+-- TODO Right now it is with csc I should check inside outputs
+
 
 -- We need to check that every output is defined
 -- That nobody is defined two times
