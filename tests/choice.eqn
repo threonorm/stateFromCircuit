@@ -1,0 +1,6 @@
+INORDER = dsr dsw ldtack d dtack lds csc0;
+OUTORDER = [d] [dtack] [lds] [csc0];
+[d] = dsr ldtack csc0 + dsw csc0' + d ldtack';
+[dtack] = d' csc0 (dsw + dsr') + dsw' d;
+[lds] = csc0 (d + dsr);
+[csc0] = ldtack' (d + dsr) + csc0 (d + dsw + dsr);
