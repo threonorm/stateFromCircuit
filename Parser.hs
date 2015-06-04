@@ -53,7 +53,7 @@ eodecl = punctuation ';'
 -- II. Headers
 
 inputs = bigList "INORDER =" ident <* eodecl
-outputs = bigList "OUTORDER =" ident <* eodecl
+outputs =bigList "OUTORDER =" ident <* eodecl
 
 -- III. Equations
 

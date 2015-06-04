@@ -69,7 +69,7 @@ main =do
 					let compo = last . sortWith length . DFS.scc $ graph in
 					let graphF = addLabels 
 									((fmap (\x->(x,undefined)) $c_inputs b\\ c_outputs b)
-									 ++c_eqs b
+									 ++fc_eqs (addIntermediateVariables b)
 									)
 						 		$ delNodes (nodes graph \\ compo) graph in 
 					do

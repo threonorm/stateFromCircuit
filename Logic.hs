@@ -187,10 +187,10 @@ removeWrong n n2 clause = case clause of --this will do nothing for the last out
 				if (p1<n && p2 < n + n2 ) 
 					then
 						Just clause	
-					else	
+					else
 						Nothing
 			else
-				if (p1>=n || p2>= n ) 
+				if (True) --(p1>=n || p2>= n ) 
 					then
 						Just clause	
 					else

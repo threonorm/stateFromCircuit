@@ -9,7 +9,7 @@ import Data.Char
 import Data.List
 import Data.Functor
 import qualified Data.Map as Map
-
+import qualified Debug.Trace as D
 import Text.Parsec 
 import Text.Parsec.String
 import Text.Parsec.Expr
@@ -21,18 +21,19 @@ import Parser
 addIntermediateVariables :: Circuit -> FullCircuit
 addIntermediateVariables circuit = 
 	Fc ((c_inputs circuit) \\ (c_outputs circuit) )
-		(c_outputs circuit) 
-		(interm)
+		(filter (\x -> take 3 x /= "csc" ) $ c_outputs circuit) 
+		(putAt interm)
 		$ (putAtTheEnd $ c_eqs circuit) --USEFUL : put the output at the end  
 	where 	
 		interm = ((nub . concat . map (extractVariables . snd) $ c_eqs circuit)
-			\\ (c_outputs circuit))
+			\\ (filter (\x -> take 3 x /= "csc") $ c_outputs circuit))
 			\\ (c_inputs circuit \\ c_outputs circuit)
 		extractVariables (Earg a) = [a]
 		extractVariables (Enot a) = extractVariables a
 		extractVariables (Ebinop _ a b) = extractVariables a
 						++ extractVariables b
-		putAtTheEnd y =  (filter (\(x,_) -> take 3 x == "csc" ) y) ++  (filter (\(x,_) -> take 3 x /= "csc") y) 
+		putAtTheEnd y =  (filter (\(x,_) -> take 3 x == "csc" ) y) ++ (filter (\(x,_) -> take 3 x /= "csc") y)  
+		putAt y =  (filter (\(x) -> take 3 x == "csc" ) y) ++ (filter (\(x) -> take 3 x /= "csc") y)  
 -- TODO Right now it is with csc I should check inside outputs
 
 
