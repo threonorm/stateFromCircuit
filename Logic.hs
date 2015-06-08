@@ -170,7 +170,7 @@ isIn l g = case lookup (l!!0) $ noeuds of
 
 
 satifyF g iso clause n n2 =
-	catMaybes . fmap (removeWrong n n2)$ foldl (\acc i->(++) acc . catMaybes $ fmap 
+	catMaybes . fmap (removeWrong g n n2)$ foldl (\acc i->(++) acc . catMaybes $ fmap 
 					(\(IClause a b) -> 
 							case satifyCP g i b of
 								Nothing -> Nothing
@@ -179,7 +179,7 @@ satifyF g iso clause n n2 =
 		[]	
 		iso 
 
-removeWrong n n2 clause = case clause of --this will do nothing for the last output persistency 
+removeWrong g n n2 clause = case clause of --this will do nothing for the last output persistency 
 	IClause ((Atom _ (Var s1:Var s1':_)):(Atom _ (Var s2:Var s2':_)):[]) (_)  ->  
 			let	p1 = event s1 s1' in		
 			let	p2 = event s2 s2' in	
@@ -188,7 +188,19 @@ removeWrong n n2 clause = case clause of --this will do nothing for the last out
 					then
 						Just clause	
 					else
-						Nothing
+					if (p1<n)
+						then --If there is two inputs at least ..
+							if ((>=2).length $ inputsFrom g s1 n) then
+							case clause of 
+								IClause a b ->  Just . head. normalize $ 
+											((foldl (\acc x -> acc `FOL.or` atom "E" [Var s1, Var . fromJust. lab g $ x ] ) ff 
+													(filter (\x -> event (fromJust $ lab g x ) s1 /= p1 ) $inputsFrom g s1 n)) 
+											`FOL.and` foldl (\acc (Atom s l) ->  atom s l `FOL.and` acc) tt (a)) 
+											`FOL.impl` foldl (\acc (Atom s l) ->  atom s l `FOL.or` acc) ff (b)	
+							-- In this case we should test if we hve two input edges and then check that
+							-- in this case we should 
+							else Nothing
+						else Nothing
 			else
 				if (True) --(p1>=n || p2>= n ) 
 					then
@@ -196,6 +208,9 @@ removeWrong n n2 clause = case clause of --this will do nothing for the last out
 					else
 						Nothing
 	_ -> Just clause
+
+inputsFrom g nd n = filter (\x -> event (fromJust $ lab g x)  nd < n ) . suc g . vertexOf g $ nd
+
 
 event a b = fromJust . findIndex (\(x,y)-> x /=y )$ a `zip` b
   
