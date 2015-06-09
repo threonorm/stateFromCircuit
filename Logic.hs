@@ -200,7 +200,8 @@ removeWrong g n n2 clause = case clause of --this will do nothing for the last o
 							-- In this case we should test if we hve two input edges and then check that
 							-- in this case we should 
 							else Nothing
-						else Nothing
+						else if (p1>n+n2 && p2> n+n2) then Just [clause]
+								else Nothing
 			else
 				if (p1>=n || p2>= n ) 
 					then
