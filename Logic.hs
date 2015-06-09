@@ -170,7 +170,7 @@ isIn l g = case lookup (l!!0) $ noeuds of
 
 
 satifyF g iso clause n n2 =
-	catMaybes . fmap (removeWrong g n n2)$ foldl (\acc i->(++) acc . catMaybes $ fmap 
+	concat . catMaybes . fmap (removeWrong g n n2)$ foldl (\acc i->(++) acc . catMaybes $ fmap 
 					(\(IClause a b) -> 
 							case satifyCP g i b of
 								Nothing -> Nothing
@@ -186,28 +186,28 @@ removeWrong g n n2 clause = case clause of --this will do nothing for the last o
 			if (s2' == s1) then 
 				if (p1<n && p2 < n + n2 ) 
 					then
-						Just clause	
+						Just [clause]	
 					else
 					if (p1<n)
 						then --If there is two inputs at least ..
 							if ((>=2).length $ inputsFrom g s1 n) then
 							case clause of 
-								IClause a b ->  Just . head. normalize $ 
-											((foldl (\acc x -> acc `FOL.or` atom "E" [Var s1, Var . fromJust. lab g $ x ] ) ff 
-													(filter (\x -> event (fromJust $ lab g x ) s1 /= p1 ) $inputsFrom g s1 n)) 
-											`FOL.and` foldl (\acc (Atom s l) ->  atom s l `FOL.and` acc) tt (a)) 
-											`FOL.impl` foldl (\acc (Atom s l) ->  atom s l `FOL.or` acc) ff (b)	
+								IClause a b -> Just .  normalize $ 
+										((foldl (\acc x -> acc `FOL.or` atom "E" [Var s1, Var . fromJust. lab g $ x ] ) ff 
+										(filter (\x -> event (fromJust $ lab g x ) s1 /= p1 ) $inputsFrom g s1 n)) 
+										`FOL.and` foldl (\acc (Atom s l) ->  atom s l `FOL.and` acc) tt (a)) 
+										`FOL.impl` ( foldl (\acc (Atom s l) -> (if head l==Var s2  then (FOL.not  (atom s l)) else tt) `FOL.or` acc) ff b)	
 							-- In this case we should test if we hve two input edges and then check that
 							-- in this case we should 
 							else Nothing
 						else Nothing
 			else
-				if (True) --(p1>=n || p2>= n ) 
+				if (p1>=n || p2>= n ) 
 					then
-						Just clause	
+						Just [clause]	
 					else
 						Nothing
-	_ -> Just clause
+	_ -> Just [clause]
 
 inputsFrom g nd n = filter (\x -> event (fromJust $ lab g x)  nd < n ) . suc g . vertexOf g $ nd
 
