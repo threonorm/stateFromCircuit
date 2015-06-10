@@ -192,15 +192,15 @@ removeWrong g n n2 clause = case clause of --this will do nothing for the last o
 						then --If there is two inputs at least ..
 							if ((>=2).length $ inputsFrom g s1 n) then
 							case clause of 
-								IClause a b -> Just .  normalize $ 
-										((foldl (\acc x -> acc `FOL.or` atom "E" [Var s1, Var . fromJust. lab g $ x ] ) ff 
-										(filter (\x -> event (fromJust $ lab g x ) s1 /= p1 ) $inputsFrom g s1 n)) 
-										`FOL.and` foldl (\acc (Atom s l) ->  atom s l `FOL.and` acc) tt (a)) 
-										`FOL.impl` ( foldl (\acc (Atom s l) -> (if head l==Var s2  then (FOL.not  (atom s l)) else tt) `FOL.or` acc) ff b)	
+								IClause a b ->Nothing -- Just .  normalize $ 
+										--((foldl (\acc x -> acc `FOL.or` atom "E" [Var s1, Var . fromJust. lab g $ x ] ) ff 
+										--(filter (\x -> event (fromJust $ lab g x ) s1 /= p1 ) $inputsFrom g s1 n)) 
+										--`FOL.and` foldl (\acc (Atom s l) ->  atom s l `FOL.and` acc) tt (a)) 
+										--`FOL.impl` ( foldl (\acc (Atom s l) -> (if head l==Var s2  then (FOL.not  (atom s l)) else tt) `FOL.or` acc) ff b)	
 							-- In this case we should test if we hve two input edges and then check that
 							-- in this case we should 
 							else Nothing
-						else if (p1>n+n2 && p2> n+n2) then Just [clause]
+						else if (p1>n+n2 && p2> n+n2) then Nothing --Just [clause]
 								else Nothing
 			else
 				if (p1>=n || p2>= n ) 
