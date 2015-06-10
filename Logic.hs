@@ -202,7 +202,8 @@ removeWrong g n n2 clause = case clause of --this will do nothing for the last o
 							else Nothing
 						else if (p1>n+n2 && p2> n+n2) then Nothing --Just [clause]
 								else Nothing
-			else
+			else if (s1'==s2) then Just [clause] 
+				else 
 				if (p1>=n || p2>= n ) 
 					then
 						Just [clause]	
@@ -252,6 +253,15 @@ outputPersistency2 = forall $ \sommet ->
 	((exists $ \completeDiagram -> 
 	atom "E" [voisin1,completeDiagram] `FOL.and`
 	atom "E" [voisin2,completeDiagram]))))))
+
+forwardPersistency2 :: Formula Input
+forwardPersistency2 = forall $ \sommet -> 
+	(forall $ \voisin1 -> (forall $ \voisin2 ->
+	atom "E" [sommet,voisin1] `impl`
+	(atom "E" [voisin2,voisin1] `impl`
+	((forall $ \back -> 
+	atom "E" [back,voisin2])))))
+
 
 
 inputCannotInput :: Formula Input 
