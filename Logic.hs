@@ -224,16 +224,16 @@ substitue g i (Atom s l) = --adaptation for persistency for this existing quanti
 	Atom s ((fmap (\x -> if x == FOL.Const "Skol8" [Var "x4",Var "x2", Var "x1"] then existRemover g (i Map.! (Var "x1")) (i Map.! (Var "x2")) (i Map.! (Var "x4")) else i Map.! x) $ take 2 l)++drop 2 l) 
 
 existRemover g s1 s2 s3 =
-	if (== 1) . length . filter (\(x,y) -> x/=y) $ (show s1) `zip` (show s3)  then 
+	--if (== 1) . length . filter (\(x,y) -> x/=y) $ (show s1) `zip` (show s3)  then 
 	case s3 of
 		Var s -> Var $ take (transition ) s ++ (\x->if x=='0' then "1" else "0") (s!!transition)  ++ drop (transition+1) s   
 		_ -> undefined
-	else
-	case s1 of
-		Var s ->  Var $ take transition2 s ++ (\x->if x=='0' then "1" else "0") (s!!transition2)  ++ drop (transition2+1) s   
-		_ -> undefined
+	--else
+	--case s3 of
+	--	Var s ->  Var $ take transition2 s ++ (\x->if x=='0' then "1" else "0") (s!!transition2)  ++ drop (transition2+1) s   
+	--	_ -> undefined
 	where 	transition =   fromJust . findIndex (\(x,y)-> x /=y ) $ (show s1) `zip` (show s2) 
-		transition2 =   fromJust . findIndex (\(x,y)-> x /=y ) $ (show s2) `zip` (show s3) 
+		transition2 =   fromJust . findIndex (\(x,y)-> x /=y ) $ (show s2) `zip` (show s1) 
 
 
 --- Formulas in the model 
@@ -259,8 +259,9 @@ forwardPersistency2 = forall $ \sommet ->
 	(forall $ \voisin1 -> (forall $ \voisin2 ->
 	atom "E" [sommet,voisin1] `impl`
 	(atom "E" [voisin2,voisin1] `impl`
-	((forall $ \back -> 
-	atom "E" [back,voisin2])))))
+	((FOL.not $ atom "Eq" [sommet,voisin2]) `impl`
+	((exists $ \back -> 
+	atom "E" [back,voisin2]))))))
 
 
 
