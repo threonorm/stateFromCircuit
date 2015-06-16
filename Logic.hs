@@ -124,18 +124,14 @@ extractPattern arg1@((IClause a q):l) = [inductivelyBuild a] --addVertex q (nub 
 			let l = newNodes 2 subGraph in
 			let withNode =	insNodes 
 						(zip l .
-						 filter (\x-> Prelude.not . elem x .fmap (\(a,b)-> b) $ labNodes subGraph) .take 2. fmap (\x->case x of
-								Var s -> s
-								_ -> undefined)
+						 filter (\x-> Prelude.not . elem x .fmap (\(a,b)-> b) $ labNodes subGraph) .take 2. fmap show -- (\x->case x of
+						--		Var s -> s
+						--		_ -> undefined)
 							 $ ln )
 						subGraph in
 			if s=="E" 
-				then insEdge 	(fromJust. lookup (case ln!!0 of
-									Var s -> s
-									_ -> undefined) . fmap (\(x,y)->(y,x)) $ labNodes withNode ,
-						fromJust. lookup (case ln!!1 of
-									Var s -> s
-									_ ->  undefined) . fmap (\(x,y)->(y,x)) $ labNodes withNode ,
+				then insEdge 	(fromJust. lookup (show $ ln!!0) . fmap (\(x,y)->(y,x)) $ labNodes withNode ,
+						fromJust. lookup (show $ ln!!1 ) . fmap (\(x,y)->(y,x)) $ labNodes withNode ,
 							"")
 						withNode
 				else withNode
@@ -271,8 +267,12 @@ inputCannotInput = forall $ \sommet ->
 	atom "E" [sommet,voisin1] `impl`
 	(atom "E" [voisin1, voisin2] `impl`
 	((exists $ \completeDiagram -> 
-	atom "E" [sommet,completeDiagram] `FOL.and`
-	atom "E" [completeDiagram,voisin2])))))
+	(atom "E" [sommet,completeDiagram] `FOL.and`
+	atom "E" [completeDiagram,voisin2])
+	`FOL.or` 
+	(FOL.not (atom "E" [sommet,completeDiagram]) `FOL.and`
+	FOL.not (atom "E" [completeDiagram,voisin2]))
+	)))))
 
 
 living g =  normalize . foldl (\acc noeud ->acc `FOL.and` 
