@@ -180,6 +180,9 @@ removeWrong g n n2 clause = case clause of --this will do nothing for the last o
 			let	p1 = event s1 s1' in		
 			let	p2 = event s2 s2' in	
 			if (s2' == s1) then 
+				(\x -> case x of
+					Nothing -> Just . normalize . FOL.impl (foldl (\acc (Atom s l) -> (atom s l) `FOL.or` acc) ff . (\(IClause a b) -> a) $ clause) . FOL.or (FOL.and (atom "E" [Var s1', existRemover g (Var s2) (Var s2') (Var s1')] ) (atom "E" [Var s2, existRemover g (Var s1) (Var s1') (Var s2)]) ) $ FOL.and (FOL.not $ atom "E" [Var s1', existRemover g (Var s2) (Var s2') (Var s1')])  (FOL.not $ atom "E" [Var s2, existRemover g (Var s1) (Var s1') (Var s2)]) 
+					Just y -> Just . (y ++) .  normalize .FOL.impl (foldl (\acc (Atom s l) -> (atom s l) `FOL.or` acc) ff . (\(IClause a b) -> a) $ clause) . FOL.or (FOL.and (atom "E" [Var s1', existRemover g (Var s2) (Var s2') (Var s1')] ) (atom "E" [Var s2, existRemover g (Var s1) (Var s1') (Var  s2)]) ) $ FOL.and (FOL.not $ atom "E" [Var s1', existRemover g (Var s2) (Var s2') (Var s1')])  (FOL.not $ atom "E" [Var s2, existRemover g (Var s1) (Var s1') (Var s2)]) ) $  
 				if (p1<n && p2 < n + n2 ) 
 					then
 						Just [clause] --cannot trigger	
@@ -195,7 +198,7 @@ removeWrong g n n2 clause = case clause of --this will do nothing for the last o
 											((FOL.and (FOL.not (atom "E" [Var . fromJust $ lab g new, existRemover g (Var s1) (Var s1') (Var . fromJust $ lab g new)] )) . FOL.not  $ atom "E" [Var s1' , existRemover g (Var s1) (Var . fromJust $ lab g new) (Var s1') ] )
 												`FOL.and` foldl (\acc (Atom s l) ->  atom s l `FOL.and` acc) tt (a) `FOL.and` atom "E" [Var s1,Var . fromJust $ lab g new] )
 											`FOL.impl` 
-											( foldl (\acc (Atom s l) -> (if head l==Var s2  then (FOL.not  (atom s l)) else tt) `FOL.or` acc) ff b)))
+											( (FOL.and (FOL.not $ atom "E" [Var s2,existRemover g (s1) (s1') (Var s2) ] )  (FOL.not $ atom "E" [Var s2, existRemover g (s1) (Var . fromJust $ lab g new) (Var s2)] )) `FOL.or` foldl (\acc (Atom s l) -> (atom s l) `FOL.or` acc) ff b)))
 											tt	
 											(filter (\x -> event (fromJust $ lab g x ) s1 /= p1 ) $ inputsFrom g s1 n) 
 									--Those are the vertices to use 
