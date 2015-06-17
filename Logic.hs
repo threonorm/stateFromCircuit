@@ -179,7 +179,7 @@ removeWrong g n n2 clause = case clause of --this will do nothing for the last o
 	IClause ((Atom _ (Var s1:Var s1':_)):(Atom _ (Var s2:Var s2':_)):[]) (_)  ->
 			let	p1 = event s1 s1' in		
 			let	p2 = event s2 s2' in	
-			if (s2' == s1) then Just [clause] 
+			if (s2' == s1) then 
 				if (p1<n && p2 < n + n2 ) 
 					then
 						Just [clause] --cannot trigger	
@@ -189,22 +189,21 @@ removeWrong g n n2 clause = case clause of --this will do nothing for the last o
 							if ((>=2).length $ inputsFrom g s1 n) then
 							case clause of 
 								IClause a b -> Just .  normalize $
-										foldl 
-										(acc new -> let p = event s1 new in
-										 acc `FOL.and`(
-										((FOL.not  $ atom "E" [Var s1 , existRemover g s1 new s'1 ] )  `FOL.and` foldl (\acc (Atom s l) ->  atom s l `FOL.and` acc) tt (a))
-										`FOL.impl`
-										( foldl (\acc (Atom s l) -> (if head l==Var s2  then (FOL.not  (atom s l)) else tt) `FOL.or` acc) ff b))
-									        tt	
-										(filter (\x -> event (fromJust $ lab g x ) s1 /= p1 ) $ inputsFrom g s1 n) 
-										--Those are the vertices to use 
+											foldl 
+											(\acc new -> 
+											acc `FOL.and` (
+											((FOL.and (FOL.not (atom "E" [Var . fromJust $ lab g new, existRemover g (Var s1) (Var s1') (Var . fromJust $ lab g new)] )) . FOL.not  $ atom "E" [Var s1' , existRemover g (Var s1) (Var . fromJust $ lab g new) (Var s1') ] )
+												`FOL.and` foldl (\acc (Atom s l) ->  atom s l `FOL.and` acc) tt (a) `FOL.and` atom "E" [Var s1,Var . fromJust $ lab g new] )
+											`FOL.impl` 
+											( foldl (\acc (Atom s l) -> (if head l==Var s2  then (FOL.not  (atom s l)) else tt) `FOL.or` acc) ff b)))
+											tt	
+											(filter (\x -> event (fromJust $ lab g x ) s1 /= p1 ) $ inputsFrom g s1 n) 
+									--Those are the vertices to use 
 							-- In this case we should test if we hve two input edges and then check that
 							-- in this case we should 
 							else Nothing
-						else if (p1>n+n2 && p2> n+n2) then Nothing --Just [clause]
-								else Nothing
-			else if (s1'==s2) then Just [clause] 
-				else 
+						else Nothing
+			else 
 				if (p1>=n || p2>= n ) 
 					then
 						Just [clause]	
