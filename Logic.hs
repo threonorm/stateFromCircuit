@@ -176,30 +176,37 @@ satifyF g iso clause n n2 =
 		iso 
 
 removeWrong g n n2 clause = case clause of --this will do nothing for the last output persistency 
-	IClause ((Atom _ (Var s1:Var s1':_)):(Atom _ (Var s2:Var s2':_)):[]) (_)  ->  
+	IClause ((Atom _ (Var s1:Var s1':_)):(Atom _ (Var s2:Var s2':_)):[]) (_)  ->
 			let	p1 = event s1 s1' in		
 			let	p2 = event s2 s2' in	
-			if (s2' == s1) then Just [clause] 
-			--	if (p1<n && p2 < n + n2 ) 
-			--		then
-			--			Just [clause]	
-			--		else
-			--		if (p1<n)
-			--			then --If there is two inputs at least ..
-			--				if ((>=2).length $ inputsFrom g s1 n) then
-			--				case clause of 
-			--					IClause a b ->Nothing -- Just .  normalize $ 
-			--							--((foldl (\acc x -> acc `FOL.or` atom "E" [Var s1, Var . fromJust. lab g $ x ] ) ff 
-			--							--(filter (\x -> event (fromJust $ lab g x ) s1 /= p1 ) $inputsFrom g s1 n)) 
-			--							--`FOL.and` foldl (\acc (Atom s l) ->  atom s l `FOL.and` acc) tt (a)) 
-			--							--`FOL.impl` ( foldl (\acc (Atom s l) -> (if head l==Var s2  then (FOL.not  (atom s l)) else tt) `FOL.or` acc) ff b)	
-			--				-- In this case we should test if we hve two input edges and then check that
-			--				-- in this case we should 
-			--				else Nothing
-			--			else if (p1>n+n2 && p2> n+n2) then Nothing --Just [clause]
-			--					else Nothing
-			else if (s1'==s2) then Just [clause] 
-				else 
+			if (s2' == s1) then 
+				(\x -> case x of
+					Nothing -> Just . normalize . FOL.impl (foldl (\acc (Atom s l) -> (atom s l) `FOL.or` acc) ff . (\(IClause a b) -> a) $ clause) . FOL.or (FOL.and (atom "E" [Var s1', existRemover g (Var s2) (Var s2') (Var s1')] ) (atom "E" [Var s2, existRemover g (Var s1) (Var s1') (Var s2)]) ) $ FOL.and (FOL.not $ atom "E" [Var s1', existRemover g (Var s2) (Var s2') (Var s1')])  (FOL.not $ atom "E" [Var s2, existRemover g (Var s1) (Var s1') (Var s2)]) 
+					Just y -> Just . (y ++) .  normalize .FOL.impl (foldl (\acc (Atom s l) -> (atom s l) `FOL.or` acc) ff . (\(IClause a b) -> a) $ clause) . FOL.or (FOL.and (atom "E" [Var s1', existRemover g (Var s2) (Var s2') (Var s1')] ) (atom "E" [Var s2, existRemover g (Var s1) (Var s1') (Var  s2)]) ) $ FOL.and (FOL.not $ atom "E" [Var s1', existRemover g (Var s2) (Var s2') (Var s1')])  (FOL.not $ atom "E" [Var s2, existRemover g (Var s1) (Var s1') (Var s2)]) ) $  
+				if (p1<n && p2 < n + n2 ) 
+					then
+						Just [clause] --cannot trigger	
+					else
+					if (p1<n)
+						then --If there is two inputs at least ..
+							if ((>=2).length $ inputsFrom g s1 n) then
+							case clause of 
+								IClause a b -> Just .  normalize $
+											foldl 
+											(\acc new -> 
+											acc `FOL.and` (
+											((FOL.and (FOL.not (atom "E" [Var . fromJust $ lab g new, existRemover g (Var s1) (Var s1') (Var . fromJust $ lab g new)] )) . FOL.not  $ atom "E" [Var s1' , existRemover g (Var s1) (Var . fromJust $ lab g new) (Var s1') ] )
+												`FOL.and` foldl (\acc (Atom s l) ->  atom s l `FOL.and` acc) tt (a) `FOL.and` atom "E" [Var s1,Var . fromJust $ lab g new] )
+											`FOL.impl` 
+											( (FOL.and (FOL.not $ atom "E" [Var s2,existRemover g (s1) (s1') (Var s2) ] )  (FOL.not $ atom "E" [Var s2, existRemover g (s1) (Var . fromJust $ lab g new) (Var s2)] )) `FOL.or` foldl (\acc (Atom s l) -> (atom s l) `FOL.or` acc) ff b)))
+											tt	
+											(filter (\x -> event (fromJust $ lab g x ) s1 /= p1 ) $ inputsFrom g s1 n) 
+									--Those are the vertices to use 
+							-- In this case we should test if we hve two input edges and then check that
+							-- in this case we should 
+							else Nothing
+						else Nothing
+			else 
 				if (p1>=n || p2>= n ) 
 					then
 						Just [clause]	
@@ -258,6 +265,16 @@ forwardPersistency2 = forall $ \sommet ->
 	((FOL.not $ atom "Eq" [sommet,voisin2]) `impl`
 	((exists $ \back -> 
 	atom "E" [back,voisin2]))))))
+
+inputCannotTrigger :: Formula Input 
+inputCannotTrigger = forall $ \sommet -> 
+	(forall $ \voisin1 -> (forall $ \voisin2 ->
+	atom "E" [sommet,voisin1] `impl`
+	(atom "E" [voisin1, voisin2] `impl`
+	((exists $ \completeDiagram -> 
+	(atom "E" [sommet,completeDiagram] `FOL.and`
+	atom "E" [completeDiagram,voisin2])
+	)))))
 
 
 

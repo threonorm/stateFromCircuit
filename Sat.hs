@@ -49,8 +49,9 @@ main =do
 						putStrLn $ variablesSat csg
 						putStrLn $ "Subject to"
 						--putStrLn . show . pretty . normalize $ atom "S" [Var . take (fromIntegral $n_v sg) $  repeat '0' ] 	
---						putStrLn . show . pretty . printSatFormulas (normalize outputPersistency2) csg nin $ inte 
-						putStrLn . show . pretty . printSatFormulas (normalize inputCannotInput) csg nin $ inte  
+						putStrLn . show . pretty . printSatFormulas (normalize outputPersistency2) csg nin $ inte 
+						putStrLn . show . pretty . printSatFormulas (normalize inputCannotTrigger) csg nin $ inte 
+						-- putStrLn . show . pretty . printSatFormulas (normalize inputCannotInput) csg nin $ inte  
 						--putStrLn . show . pretty . printSatFormulas (normalize forwardPersistency2) csg nin $ inte  
 						putStrLn . show . pretty . living $ csg 
 						putStrLn . show . pretty . defineReachable $ csg 
