@@ -66,7 +66,7 @@ main =do
 					let graph = ((mkGraph (labNodes csg) .fmap 
 							(\(x,y) -> (vertexOf csg x, vertexOf csg y,""))
 							$ myE) :: Gr String String) in	
-					let compo = last . sortWith length . DFS.scc $ graph in
+					let compo = nodes graph in -- last .  sortWith length . DFS.scc $ graph in
 					let graphF = addLabels 
 									((fmap (\x->(x,undefined)) $c_inputs b\\ c_outputs b)
 									 ++fc_eqs (addIntermediateVariables b)

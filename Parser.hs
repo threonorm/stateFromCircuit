@@ -115,4 +115,19 @@ solutionParserMinisat = chunkParser *> ( many $edgeParser)  <* ((try. many $ pun
 solutionParser = many $ (\x -> let sz = length x in
 			(take (sz `quot` 2) $ x, drop (sz `quot` 2) $ x)) <$> oneEdge
 
- 
+--
+--(<++>) a b = (++) <$> a <*> b
+--(<:>) a b = (:) <$> a <*> b
+--
+--number = many1 digit
+--
+--plus = char '+' *> number
+--
+--minus =  char '-' <:> number
+--
+--integer = plus <|> minus <|> number
+--
+--float = fmap rd $ integer <++> decimal <++> exponent
+--	where	rd = read :: String -> Float
+--		decimal = option "" $ char '.' <:> number
+--		exponent = option "" $ oneOf "eE" <:> integer

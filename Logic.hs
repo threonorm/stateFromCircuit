@@ -150,6 +150,19 @@ simplify g x = foldl
 		(Just [])
 		$ x	
 	
+simplify2 g x = foldl 
+		(\acc (Atom s l) -> case acc of
+					Nothing -> Nothing
+					Just j -> if s=="Eq" 
+						then	if l!!0 == l!!1 
+								then Nothing
+								else Just j
+			 			else if isIn l g 
+							then Just $ (Atom s l):j
+							else Nothing) 
+		(Just [])
+		$ x	
+	
 
 isIn l g = case lookup (l!!0) $ noeuds of
 	Nothing -> False
@@ -165,8 +178,13 @@ isIn l g = case lookup (l!!0) $ noeuds of
 -----Case outputpersistency -----
 
 
+
+
+
 satifyF g iso clause n n2 =
-	concat . catMaybes . fmap (removeWrong g n n2)$ foldl (\acc i->(++) acc . catMaybes $ fmap 
+	 catMaybes . fmap (\(IClause a b)-> case simplify2 g a of
+				Nothing -> Nothing 
+				Just l -> Just $ IClause l (fromMaybe [] $ simplify g b)) . concat . catMaybes . fmap (removeWrong g n n2)$ foldl (\acc i-> (++) acc . catMaybes $ fmap 
 					(\(IClause a b) -> 
 							case satifyCP g i b of
 								Nothing -> Nothing
@@ -181,8 +199,9 @@ removeWrong g n n2 clause = case clause of --this will do nothing for the last o
 			let	p2 = event s2 s2' in	
 			if (s2' == s1) then 
 				(\x -> case x of
-					Nothing -> Just . normalize . FOL.impl (foldl (\acc (Atom s l) -> (atom s l) `FOL.or` acc) ff . (\(IClause a b) -> a) $ clause) . FOL.or (FOL.and (atom "E" [Var s1', existRemover g (Var s2) (Var s2') (Var s1')] ) (atom "E" [Var s2, existRemover g (Var s1) (Var s1') (Var s2)]) ) $ FOL.and (FOL.not $ atom "E" [Var s1', existRemover g (Var s2) (Var s2') (Var s1')])  (FOL.not $ atom "E" [Var s2, existRemover g (Var s1) (Var s1') (Var s2)]) 
-					Just y -> Just . (y ++) .  normalize .FOL.impl (foldl (\acc (Atom s l) -> (atom s l) `FOL.or` acc) ff . (\(IClause a b) -> a) $ clause) . FOL.or (FOL.and (atom "E" [Var s1', existRemover g (Var s2) (Var s2') (Var s1')] ) (atom "E" [Var s2, existRemover g (Var s1) (Var s1') (Var  s2)]) ) $ FOL.and (FOL.not $ atom "E" [Var s1', existRemover g (Var s2) (Var s2') (Var s1')])  (FOL.not $ atom "E" [Var s2, existRemover g (Var s1) (Var s1') (Var s2)]) ) $  
+					Nothing -> Just .  normalize . FOL.impl (foldl (\acc (Atom s l) -> (atom s l) `FOL.and` acc) tt . (\(IClause a b) -> a) $ clause) . FOL.or (FOL.and (atom "E" [ existRemover g (Var s2) (Var s2') (Var s1'),Var s1'] ) (atom "E" [Var s2, existRemover g (Var s1) (Var s1') (Var s2)]) ) $ FOL.and (FOL.not $ atom "E" [ existRemover g (Var s2) (Var s2') (Var s1'), Var s1'])  (FOL.not $ atom "E" [Var s2, existRemover g (Var s1) (Var s1') (Var s2)])  
+					Just y -> Just .(++y) .  normalize . FOL.impl (foldl (\acc (Atom s l) -> (atom s l) `FOL.and` acc) tt . (\(IClause a b) -> a) $ clause) . FOL.or (FOL.and (atom "E" [ existRemover g (Var s2) (Var s2') (Var s1'),Var s1'] ) (atom "E" [Var s2, existRemover g (Var s1) (Var s1') (Var s2)]) ) $ FOL.and (FOL.not $ atom "E" [ existRemover g (Var s2) (Var s2') (Var s1'), Var s1'])  (FOL.not $ atom "E" [Var s2, existRemover g (Var s1) (Var s1') (Var s2)]) )$ 
+				--	Just y -> Just . normalize .FOL.impl (foldl (\acc (Atom s l) -> (atom s l) `FOL.and` acc) tt . (\(IClause a b) -> a) $ clause) . FOL.or (FOL.and (atom "E" [ existRemover g (Var s2) (Var s2') (Var s1'), Var s1'] ) (atom "E" [Var s2, existRemover g (Var s1) (Var s1') (Var  s2)]) ) $ FOL.and (FOL.not $ atom "E" [ existRemover g (Var s2) (Var s2') (Var s1'), Var s1'])  (FOL.not $ atom "E" [Var s2, existRemover g (Var s1) (Var s1') (Var s2)]) ) $  
 				if (p1<n && p2 < n + n2 ) 
 					then
 						Just [clause] --cannot trigger	
@@ -191,14 +210,14 @@ removeWrong g n n2 clause = case clause of --this will do nothing for the last o
 						then --If there is two inputs at least ..
 							if ((>=2).length $ inputsFrom g s1 n) then
 							case clause of 
-								IClause a b -> Just .  normalize $
+								IClause a b ->  Just . normalize $
 											foldl 
 											(\acc new -> 
 											acc `FOL.and` (
 											((FOL.and (FOL.not (atom "E" [Var . fromJust $ lab g new, existRemover g (Var s1) (Var s1') (Var . fromJust $ lab g new)] )) . FOL.not  $ atom "E" [Var s1' , existRemover g (Var s1) (Var . fromJust $ lab g new) (Var s1') ] )
 												`FOL.and` foldl (\acc (Atom s l) ->  atom s l `FOL.and` acc) tt (a) `FOL.and` atom "E" [Var s1,Var . fromJust $ lab g new] )
 											`FOL.impl` 
-											( (FOL.and (FOL.not $ atom "E" [Var s2,existRemover g (s1) (s1') (Var s2) ] )  (FOL.not $ atom "E" [Var s2, existRemover g (s1) (Var . fromJust $ lab g new) (Var s2)] )) `FOL.or` foldl (\acc (Atom s l) -> (atom s l) `FOL.or` acc) ff b)))
+											( (FOL.and (FOL.not $ atom "E" [Var s2,existRemover g (s1) (s1') (Var s2) ] )  (FOL.not $ atom "E" [Var s2, existRemover g (s1) (Var . fromJust $ lab g new) (Var s2)] )) `FOL.or` FOL.and (atom "E" [Var s2,existRemover g (s1) (s1') (Var s2) ] )  ( atom "E" [Var s2, existRemover g (s1) (Var . fromJust $ lab g new) (Var s2)] )))) 
 											tt	
 											(filter (\x -> event (fromJust $ lab g x ) s1 /= p1 ) $ inputsFrom g s1 n) 
 									--Those are the vertices to use 
@@ -221,7 +240,7 @@ event a b = fromJust . findIndex (\(x,y)-> x /=y )$ a `zip` b
   
 satifyCP g i l =simplify g. fmap (substitue g i)$ l
 
-satifyCN g i l= simplify g. fmap (substitue g i) $l
+satifyCN g i l= simplify2 g. fmap (substitue g i) $l
 
 substitue g i (Atom s l) = --adaptation for persistency for this existing quantifier
 	Atom s ((fmap (\x -> if x == FOL.Const "Skol8" [Var "x4",Var "x2", Var "x1"] then existRemover g (i Map.! (Var "x1")) (i Map.! (Var "x2")) (i Map.! (Var "x4")) else i Map.! x) $ take 2 l)++drop 2 l) 
@@ -326,6 +345,7 @@ variablesSat sg =  ("Maximize\n\t " ++) . intercalate " + " . fmap (\(x,y)->
 
 
 --Tools
+
 
 intF [] = 0
 intF (t:q) = if t then 2* intF q +1 else 2 * intF q 
