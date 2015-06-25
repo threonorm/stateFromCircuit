@@ -16,7 +16,6 @@ import Text.Parsec.Expr
 import Text.Parsec.Token
  
 import AST
-
 ------------------
 -- The language --
 ------------------
@@ -131,3 +130,18 @@ solutionParser = many $ (\x -> let sz = length x in
 --	where	rd = read :: String -> Float
 --		decimal = option "" $ char '.' <:> number
 --		exponent = option "" $ oneOf "eE" <:> integer
+
+
+-- Parser for state graph(manyTill anyToken . try $ stateGraphStart) *>
+--oneVertex = *> many sgEdge 
+
+stateGraphStart = (manyTill anyToken .  try  $ string ".state graph" <* spaces) *> many sgEdge 
+
+oneVertex = punctuation 'S' *> many (char '0' <|> char '1') <* spaces 
+
+sgEdge = do
+		v1<- oneVertex
+		_<- many (letter <|> digit <|> char '+' <|> char '-' ) <* spaces 
+		v2<- oneVertex
+		return $ (v1, v2)
+

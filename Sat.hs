@@ -35,9 +35,9 @@ import System.Environment
 main =do
 	lArgs <- getArgs
 	result <-parseFromFile netlistParser . (!!0) $ lArgs
-	case result  of
-		Left a -> undefined
-		Right b -> do
+	targetSpec <- parseFromFile stateGraphStart . (!!1) $ lArgs 
+	case (result, targetSpec)  of
+		(Right b, Right target) -> do
 				let sg = computeTransitionByCircuit . addIntermediateVariables $ b in	
 					let  csg = convertGraph sg in
 					let nin = fromIntegral . n_inputs $ sg in  
@@ -67,3 +67,4 @@ main =do
 									$(lab csg x))
 							 $ Data.Graph.Inductive.Graph.nodes csg	
 						putStrLn $ "End"
+		_ -> undefined
