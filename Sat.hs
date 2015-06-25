@@ -48,7 +48,9 @@ main =do
 --						putStrLn . show . allIsomorphisms (normalize outputPersistency) $ csg 
 						putStrLn $ variablesSat csg
 						putStrLn $ "Subject to"
-						--putStrLn . show . pretty . normalize $ atom "S" [Var . take (fromIntegral $n_v sg) $  repeat '0' ] 	
+						putStrLn . show . pretty . normalize $ atom "E" [Var $ "0000000", Var $ "1000000"] 	
+						putStrLn . show . pretty . normalize $ atom "E" [Var $ "0000000", Var $ "0100000"] 	
+						putStrLn . show . pretty . constraintCycle $ ["0000000","1000000","1001000","1001001","1011001","1011101","1011111","0011111","0011011","0010011","0010001","0010000", "0000000"]
 						putStrLn . show . pretty . printSatFormulas (normalize outputPersistency2) csg nin $ inte 
 						putStrLn . show . pretty . printSatFormulas (normalize inputCannotTrigger) csg nin $ inte 
 						-- putStrLn . show . pretty . printSatFormulas (normalize inputCannotInput) csg nin $ inte  
@@ -68,3 +70,11 @@ main =do
 							 $ Data.Graph.Inductive.Graph.nodes csg	
 						putStrLn $ "End"
 		_ -> undefined
+
+
+
+constraintCycle :: [ String ] -> INF
+constraintCycle l = normalize . foldl 
+			(\acc (start,end)-> acc `FOL.and` atom "E" [Var start , Var end] )
+			tt
+			. zip l . tail $ l  
