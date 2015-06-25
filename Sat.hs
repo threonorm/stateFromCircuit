@@ -48,9 +48,7 @@ main =do
 --						putStrLn . show . allIsomorphisms (normalize outputPersistency) $ csg 
 						putStrLn $ variablesSat csg
 						putStrLn $ "Subject to"
-						putStrLn . show . pretty . normalize $ atom "E" [Var $ "0000000", Var $ "1000000"] 	
-						putStrLn . show . pretty . normalize $ atom "E" [Var $ "0000000", Var $ "0100000"] 	
-						putStrLn . show . pretty . constraintCycle $ ["0000000","1000000","1001000","1001001","1011001","1011101","1011111","0011111","0011011","0010011","0010001","0010000", "0000000"]
+						mapM_(\(x,y) -> putStrLn . show . pretty . normalize $ atom "E" [Var  x, Var y]) target	
 						putStrLn . show . pretty . printSatFormulas (normalize outputPersistency2) csg nin $ inte 
 						putStrLn . show . pretty . printSatFormulas (normalize inputCannotTrigger) csg nin $ inte 
 						-- putStrLn . show . pretty . printSatFormulas (normalize inputCannotInput) csg nin $ inte  
