@@ -210,15 +210,15 @@ removeWrong g n n2 clause = case clause of --this will do nothing for the last o
 						then --If there is two inputs at least ..
 							if ((>=2).length $ inputsFrom g s1 n) then
 							case clause of 
-								IClause a b ->  Just . normalize $
+								IClause a b ->  Just  $
 											foldl 
 											(\acc new -> 
-											acc `FOL.and` (
+											( ++ acc) . normalize $ (
 											((FOL.and (FOL.not (atom "E" [Var . fromJust $ lab g new, existRemover g (s1) (s1') (Var . fromJust $ lab g new)] )) . FOL.not  $ atom "E" [Var s1' , existRemover g (s1) ( fromJust $ lab g new) (Var s1') ] )
 												`FOL.and` foldl (\acc (Atom s l) ->  atom s l `FOL.and` acc) tt (a) `FOL.and` atom "E" [Var s1,Var . fromJust $ lab g new] )
 											`FOL.impl` 
 											( (FOL.and (FOL.not $ atom "E" [Var s2,existRemover g (s1) (s1') (Var s2) ] )  (FOL.not $ atom "E" [Var s2, existRemover g (s1) (fromJust $ lab g new) (Var s2)] )) `FOL.or` (FOL.and (atom "E" [Var s2,existRemover g (s1) (s1') (Var s2) ] )  ( atom "E" [Var s2, existRemover g (s1) (fromJust $ lab g new) (Var s2)]) )))) 
-											tt	
+											[]	
 											(filter (\x -> event (fromJust $ lab g x ) s1 /= p1 ) $ inputsFrom g s1 n) 
 									--Those are the vertices to use 
 							-- In this case we should test if we hve two input edges and then check that
