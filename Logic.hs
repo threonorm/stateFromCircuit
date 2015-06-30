@@ -210,7 +210,7 @@ removeWrong g n n2 clause = case clause of --this will do nothing for the last o
 						then --If there is two inputs at least ..
 							if ((>=2).length $ inputsFrom g s1 n) then
 							case clause of 
-								IClause a b ->  Just  $
+								IClause a b ->  (\x-> Nothing) .Just  $
 											foldl 
 											(\acc new -> 
 											( ++ acc) . normalize $ ( 
@@ -225,8 +225,8 @@ removeWrong g n n2 clause = case clause of --this will do nothing for the last o
 							-- in this case we should 
 							else Nothing
 						else Nothing
-			else 
-				if (p1>=n || p2>= n ) 
+			else --I enforce input persistency
+				if (True) -- (p1>=n || p2>= n ) 
 					then
 						Just [clause]	
 					else
