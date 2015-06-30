@@ -46,8 +46,8 @@ outputCircuitGraph circuit graph =
 	"\n.internal " ++ concat (intersperse " " (fc_intermediate circuit ++ (filter (\x-> take 3 x == "csc") . fc_outputs $ circuit) )) ++
 	"\n.state graph\n" ++ concat (fmap (\(x,y,l) -> (("S" ++)  . fromJust . lab graph $ x) ++ " " ++ l ++ sign (fromJust . lab graph $ x) (fromJust . lab graph $ y) 
 					++( (" S" ++) . fromJust.lab graph $ y) ++ "\n"  ) $ labEdges graph ) ++
-	".marking {S" ++"}\n.end"
-	--".marking {S" ++ stableV graph circuit ++ "}\n.end"
+--	".marking {S" ++"}\n.end"
+	".marking {S" ++ stableV graph circuit ++ "}\n.end"
 	where 	nl= length $ fc_inputs circuit 
 		stableV graph circuit =head $ foldl (\acc (n,l) ->
 					if take nl l == replicate nl '0' && ((==[]).catMaybes . fmap (\(_,_,l2)-> if l2 `elem` (fc_inputs circuit)
