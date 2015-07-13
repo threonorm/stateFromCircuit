@@ -324,6 +324,24 @@ propagateSignals g nbInputs = normalize . foldl (\acc noeud ->acc `FOL.and`
 				(atom "S" [Var . fromJust. lab g $ noeud]  `impl` bigAndSucOut g noeud nbInputs ) 
 				) tt $ nodes g   
 
+eq a b = (a `impl` b ) `FOL.and` (b `impl` a) 
+scc initS g  = normalize . FOL.and (foldl (\acc n-> FOL.and acc $ if ( == initS ).fromJust . lab g $ n 
+									then
+									 FOL.and (atom "A0" [Var . fromJust . lab g $ n]) (atom "C0" [Var . fromJust . lab g $ n]) 
+									else
+									 FOL.and (FOL.not $ atom "C0" [Var . fromJust . lab g $ n]) . FOL.not $ atom "A0" [Var . fromJust . lab g $ n]) tt $ nodes g ) .foldl (\acc (distance,n) -> acc `FOL.and` (impl (atom "S" [Var . fromJust . lab g $ n] ) . 
+								foldl (\acc (d1,n1) -> (atom ("A"++ show d1) [Var . fromJust . lab g $ n]) `FOL.or` acc )  (atom "A0" [Var . fromJust . lab g $ n]). zip [1..] $ nodes g ) `FOL.and` 
+			(impl (atom "S" [Var . fromJust . lab g $ n] ) . 
+			foldl (\acc (d1,n1) -> (atom ("C"++ show d1) [Var . fromJust . lab g $ n]) `FOL.or` acc ) (atom "C0" [Var . fromJust . lab g $ n])  . zip [1..] $ nodes g ) `FOL.and` 
+			
+			(foldl (\acc1 noeud ->
+				FOL.and acc1 . FOL.and (atom ("C"++ show distance) [Var . fromJust . lab g $ noeud]  `eq`
+				(foldl (\accV voisin -> (FOL.and (atom "E" [ Var . fromJust . lab g $ noeud , Var . fromJust . lab g $voisin]) $ atom ("C"++ (show $ distance-1)) [Var . fromJust . lab g $ voisin]) `FOL.or` accV  ) ff $ suc g noeud)) 
+				$ atom ("A"++ show distance) [Var . fromJust . lab g $ noeud]  `eq`
+				(foldl (\accV voisin -> (FOL.and (atom "E" [ Var . fromJust . lab g $voisin , Var . fromJust . lab g $ noeud]) $ atom ("A"++ (show $ distance-1)) [Var . fromJust . lab g $ voisin]) `FOL.or` accV  ) ff $ pre g noeud) 
+				)
+			tt $ nodes g ))
+	 tt . zip [1..] $ nodes g
 
 --Actually covered by the input implies input
 mutually g =normalize . foldl (\ acc x -> foldl (\acc y -> if x `elem` pre g y  

@@ -37,17 +37,17 @@ import Turtle
 nextNotUsed [] =  return ExitSuccess
 nextNotUsed (t:q) = do
 	lArgs<- getArgs
-	_ <- shell (pack $ script ((!!1) lArgs) t) Turtle.empty  
-	_ <- cp (fromText . pack $ ((!!1) lArgs) ++ ".csg")  (fromText . pack $((!!1) lArgs) ++ show t ++".csg")  
-	myE<- parseFromFile solutionParser $  ((!!1) lArgs)++ ".solReadable" 
+	_ <- shell (pack $ script ((!!0) lArgs) t) Turtle.empty  
+	_ <- cp (fromText . pack $ ((!!0) lArgs) ++ ".csg")  (fromText . pack $((!!0) lArgs) ++ show t ++".csg")  
+	myE<- parseFromFile stateGraphStart $  ((!!0) lArgs)++ ".csg" 
 	case myE of
-		Right myEdges -> nextNotUsed ((t:q) \\ (fmap (\(x,y)-> event x y)  myEdges)) 
+		Right myEdges -> return $ ExitSuccess --nextNotUsed ( (t:q) \\ ((\x-> D.trace (show. nub $ x) $ x) $(fmap (\(x,y)-> event x y)  myEdges))) 
 		Left _ -> return $ ExitFailure 1  
 script v1 t =
-	"./StateFromCircuit/Sat "++ v1 ++" | sed \"s/;//\" > "++ v1 ++".lp\n"++ --add the line of 
-	"./gurobi.sh gurosolve.py " ++ v1 ++ 
-	"\ncat " ++ v1 ++ ".sol | grep -v \" 0\" | grep -v \"#\" | sed \"s/ 1//\" | sort > "++ v1 ++ ".solReadable"++ 
-	"\n./StateFromCircuit/Printer " ++ v1 ++ " "++ v1 ++".solReadable > " ++ v1 ++ ".csg"
+	"./Sat +RTS -K100M -RTS "++ v1 ++ " " ++ show t ++ " | sed \"s/;//\" > "++ v1 ++".lp\n"++ --add the line of 
+	"./../gurobi.sh gurosolve.py " ++ v1 ++ 
+	"\ncat " ++ v1 ++ ".sol | grep -v \" 0\" | grep -v \"#\" |grep -v \"A\" | grep -v \"C\" |  sed \"s/ 1//\" | sort > "++ v1 ++ ".solReadable"++ 
+	"\n./Printer " ++ v1 ++ " "++ v1 ++".solReadable > " ++ v1 ++ ".csg"
 
 
 main = nextNotUsed [0..2]
