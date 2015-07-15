@@ -41,13 +41,16 @@ nextNotUsed (t:q) = do
 	_ <- cp (fromText . pack $ ((!!0) lArgs) ++ ".csg")  (fromText . pack $((!!0) lArgs) ++ show t ++".csg")  
 	myE<- parseFromFile stateGraphStart $  ((!!0) lArgs)++ ".csg" 
 	case myE of
-		Right myEdges -> return $ ExitSuccess --nextNotUsed ( (t:q) \\ ((\x-> D.trace (show. nub $ x) $ x) $(fmap (\(x,y)-> event x y)  myEdges))) 
+		Right myEdges -> nextNotUsed (q) -- nextNotUsed ( (t:q) \\ ((\x-> D.trace (show. nub $ x) $ x) $(fmap (\(x,y)-> event x y)  myEdges))) 
 		Left _ -> return $ ExitFailure 1  
+
 script v1 t =
-	"./Sat +RTS -K100M -RTS "++ v1 ++ " " ++ show t ++ " | sed \"s/;//\" > "++ v1 ++".lp\n"++ --add the line of 
+	"touch "++ v1 ++ ".cycles\n"++
+	"cat  " ++v1 ++ ".cycles | " ++ "./Sat +RTS -K2G -RTS "++ v1 ++ " " ++ show t ++  " | sed \"s/;//\" > "++ v1 ++".lp\n"++ --add the line of 
 	"./../gurobi.sh gurosolve.py " ++ v1 ++ 
 	"\ncat " ++ v1 ++ ".sol | grep -v \" 0\" | grep -v \"#\" |grep -v \"A\" | grep -v \"C\" |  sed \"s/ 1//\" | sort > "++ v1 ++ ".solReadable"++ 
-	"\n./Printer " ++ v1 ++ " "++ v1 ++".solReadable > " ++ v1 ++ ".csg"
+	"\n./Printer " ++ v1 ++ " "++ v1 ++".solReadable > " ++ v1 ++ ".csg"++
+	"\n./Cycles " ++ v1 ++ " "++ v1 ++".solReadable >> " ++ v1 ++ ".cycles"
 
 
-main = nextNotUsed [0..2]
+main = nextNotUsed [0,0,1,1,1,1,1] 
