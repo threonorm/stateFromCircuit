@@ -401,7 +401,6 @@ possibleEdges g ((Atom s l):q) t =
 
 -- The followign function was a good exercice but useless and actually false for the purpose. 
 -- It is dead code for the outputPersistency.
--- TODO actually this is the solution to skolemisation I believe.
 -- But not to independent vertex.
 addVertex b [] g = return g
 addVertex c (t:q) g = (\x-> if x==[] then addVertex c q g else x) $
@@ -412,6 +411,7 @@ addVertex c (t:q) g = (\x-> if x==[] then addVertex c q g else x) $
 					 addVertex c q (insEdge (vertexOf ng $ a, vertexOf ng $ b,"") $ ng)
 				else addVertex c q g
 
+--Blup
 
 outputPersistency :: Formula Input
 outputPersistency = forall $ \sommet -> 
